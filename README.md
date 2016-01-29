@@ -7,7 +7,6 @@ Basic simulation / parameter estimation / latent state inference for hidden Mark
 ~~~julia
 julia> Pkg.clone("git://github.com/BenConnault/ParametricModels.jl.git")
 julia> Pkg.clone("git://github.com/BenConnault/DynamicDiscreteModels.jl.git")
-julia> Pkg.clone("git://github.com/BenConnault/Markov.jl.git")
 julia> Pkg.clone("git://github.com/BenConnault/HiddenMarkovModels.jl.git")
 ~~~
 

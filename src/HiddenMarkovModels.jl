@@ -1,5 +1,6 @@
 module HiddenMarkovModels
 
+using Distributions
 importall DynamicDiscreteModels
 
 # When I get around to spinning of a Markov.jl
