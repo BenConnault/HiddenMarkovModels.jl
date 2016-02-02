@@ -5,7 +5,6 @@ Basic simulation / parameter estimation / latent state inference for hidden Mark
 ## Installation
 
 ~~~julia
-julia> Pkg.clone("git://github.com/BenConnault/ParametricModels.jl.git")
 julia> Pkg.clone("git://github.com/BenConnault/DynamicDiscreteModels.jl.git")
 julia> Pkg.clone("git://github.com/BenConnault/HiddenMarkovModels.jl.git")
 ~~~
@@ -28,7 +27,7 @@ julia> using HiddenMarkovModels;
 julia> a=[.4 .6; .3 .7];
 julia> b=[.3 .1 .6; .5 .2 .3];
 julia> model=hmm((a,b));
-julia> data=simulate(model,10000);
+julia> data=rand(model,10000);
 julia> @time abhat=em(model,data)
 estimating hidden Markov model via Baum-Welch algorithm...
  log-likelihood: -1.0267

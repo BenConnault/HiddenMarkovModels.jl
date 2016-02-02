@@ -25,10 +25,10 @@ function hmm(ab::Tuple)
 end
 
 #ab=(a,b) parametrization
-calibrate!(model::HiddenMarkovModel,ab::Tuple)=hmm2ddm!(model,ab[1],ab[2])
+coef!(model::HiddenMarkovModel,ab::Tuple)=hmm2ddm!(model,ab[1],ab[2])
 
 #canonical parametrization in case someone wants to apply mle() to it
-calibrate!(model::HiddenMarkovModel,theta::Array{Float64,1})=calibrate(model,theta2ab(theta,size(model.mu,1)))
+coef!(model::HiddenMarkovModel,theta::Array{Float64,1})=coef!(model,theta2ab(theta,size(model.mu,1)))
 
 theta2ab(theta::Array{Float64,1},dx::Int)=(z2q(theta[1:dx*(dx-1)]),z2q(theta[dx*(dx-1)+1:end],dx))
 

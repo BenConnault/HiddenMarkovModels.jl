@@ -1,3 +1,5 @@
+import Distributions: Dirichlet
+
 # draw random stochastic matrix
 rsm(dx::Int,dy::Int)=mapslices(x->rand(Dirichlet(x)),ones(dx,dy),2)
 rsm(k::Int)=rsm(k,k)

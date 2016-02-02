@@ -25,7 +25,7 @@ data[2]=[3,2,1]
 
 viterbi(model,data)
 
-data=simulate(model,10000)
+data=rand(model,10000)
 abhat=em(model,data)
 
 @test vecnorm(abhat[1]-a)<5e-2
