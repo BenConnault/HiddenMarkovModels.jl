@@ -5,8 +5,7 @@ Basic simulation / parameter estimation / latent state inference for hidden Mark
 ## Installation
 
 ~~~julia
-julia> Pkg.clone("git://github.com/BenConnault/DynamicDiscreteModels.jl.git")
-julia> Pkg.clone("git://github.com/BenConnault/HiddenMarkovModels.jl.git")
+julia> Pkg.add("HiddenMarkovModels")
 ~~~
 
 ##Usage
