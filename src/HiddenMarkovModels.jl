@@ -11,7 +11,7 @@ include("stochasticmatrices.jl")
 # Ben's exports
 export 	coef!, rand, loglikelihood, mle, dim, 
 		em, viterbi,
-		baumwelch, hmm, theta2ab, 
+		baumwelch, hmm, theta2ab
 
 #Alex's exports
 export	HMM, forward_backward, viterbi, smoothed_forward_backward
