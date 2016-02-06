@@ -14,7 +14,7 @@ export 	coef!, rand, loglikelihood, mle, dim,
 		baumwelch, hmm, theta2ab
 
 #Alex's exports
-export	HMM, forward_backward, viterbi, smoothed_forward_backward
+export	HMM, forward_backward, viterbi, smoothed_forward_backward, fit!
 
 
 #Ben's sources

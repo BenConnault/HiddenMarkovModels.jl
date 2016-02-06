@@ -13,26 +13,19 @@ s,o = rand(model,n_obs)
 @test(all(s .== 1))
 @test(all(o .== 2))
 
-# check forward algorithm on perfect sequence
-alpha,p_obs = forward(model,o; scaling=false)
-@test(p_obs == 1)
-@test(all(alpha[:,1] .== 1))
-@test(all(alpha[:,2] .== 0))
-
-# test forward with scaling
-alpha,log_p_obs,coeff = forward(model,o)
+# check forward-backward algorithm on perfect sequence
+alpha,beta,log_p_obs = forward_backward(model,o; scaling=false)
 @test(log_p_obs == 0.0)
 @test(all(alpha[:,1] .== 1))
 @test(all(alpha[:,2] .== 0))
-@test(all(coeff .== 1.0))
-
-# check backward algorithm on perfect sequence
-beta = backward(model,o)
 @test(all(beta[end,:] .== 1))
 @test(all(beta[:,1] .== 1))
 
-# test backward with scaling
-beta = backward(model,o;scale_coeff=coeff)
+# test forward-backward with scaling
+alpha,beta,log_p_obs = forward_backward(model,o)
+@test(log_p_obs == 0.0)
+@test(all(alpha[:,1] .== 1))
+@test(all(alpha[:,2] .== 0))
 @test(all(beta[end,:] .== 1))
 @test(all(beta[:,1] .== 1))
 
@@ -40,9 +33,8 @@ beta = backward(model,o;scale_coeff=coeff)
 @test(all(viterbi(model,o) .== s))
 
 # check forward-backward algorithm on impossible sequence
-alpha,p_obs = forward(model,o+1; scaling=false)
-beta = backward(model,o+1)
-@test(p_obs == 0)
+alpha,beta,log_p_obs = forward_backward(model,o+1; scaling=false)
+@test(log_p_obs == -Inf)
 @test(all(alpha .== 0))
 @test(all(beta[1:end-1,:] .== 0))
 
@@ -74,10 +66,8 @@ true_alpha = [ 8.3333e-02   1.3833e-02   2.2909e-03   3.7885e-04   6.295e-05  ;
 true_beta = [ 8.9630e-04   5.2841e-03   3.0533e-02   1.7000e-01   1.0000e+00 ;
               2.4262e-03   2.4418e-02   2.4613e-01   4.9667e-01   1.0000e+00 ]
 
-alpha,p_obs = forward(model,o; scaling=false)
-beta = backward(model,o)
+alpha,beta,log_p_obs = forward_backward(model, o; scaling=false)
 
-@test(round(p_obs,6) == 0.000196)
 @test(all(round(alpha,6) .== round(true_alpha',6)))
 @test(all(round(beta,5) .== round(true_beta',5)))
 
@@ -88,10 +78,8 @@ alpha_scaled = [ 0.625   0.7332  0.8173  0.5884  0.3212 ;
 beta_scaled = [  4.5729   3.5946   2.9391   2.4312  3.2847 ;
                  12.3785  16.6108  23.6922  7.1028  3.2847 ]
 
-alpha,log_p_obs,coeff = forward(model,o; scaling=true)
-beta = backward(model,o; scale_coeff=coeff)
+alpha,beta,log_p_obs = forward_backward(model,o; scaling=true)
 
-@test(log_p_obs == log(p_obs))
 @test(all(round(alpha,4) .== round(alpha_scaled',4)))
 @test(all(round(beta,4) .== round(beta_scaled',4)))
 
@@ -130,84 +118,3 @@ fit!(model2, o; max_iter=60, scaling=true)
 @test(all(round(model2.B[2].p,4) .== expected_result_B[2,:]'))
 @test(all(round(model2.p,4) .== expected_result_p))
 
-# model3 = deepcopy(model) # check with multiple sequences
-# oo = (Vector{Int})[o;o] # two copies of the same sequence
-# baum_welch!(model3, oo; max_iter=60, tol=NaN, scaling=true)
-# @test(all(round(model3.A,4) .== expected_result_A))
-# @test(all(round(model3.B,4) .== expected_result_B))
-# @test(all(round(model3.p,4) .== expected_result_p))
-
-# ## Check Baum-Welch from random initialization
-# # Model used to generate observation sequences:
-# # A = [ 0.7 0.3 ;
-# #       0.4 0.6 ]
-# # B = [ 1/2        1/3   1/6+eps() ;
-# #       1/6+eps()  1/3   1/2       ]
-# # p = [0.5, 0.5]
-# model = dHMM(2,3)
-# o = [1,3,1,1,1,2,3,1,2,1,3,2,1,3,2,2,2,2,2,2,2,1,1,1,2,1,1,2,3,2,1,2,3,3,2,1,1,3,2,3,2,2,2,3,2,3,3,2,1,2]
-
-# ch = baum_welch!(model, o; max_iter=1000, tol=1e-7)
-
-# @test(all(round(sum(model.A,2),15) .== 1.0))
-# @test(all(round(sum(model.B,2),15) .== 1.0))
-# @test(round(sum(model.p),15) == 1.0)
-
-# # log-liklihood should always increase under baum_welch
-# @test(all(diff(ch) .>= 0.0))
-
-# # log-liklihood should plateau (test tolerance parameter)
-# if length(ch)<1000
-#   @test(ch[end] - ch[end-1] < 1e-7)
-# end
-
-# ## Check Baum-Welch on multiple sequences
-# o1 = [3,3,3,1,1,1,1,3,2,2]
-# o2 = [1,3,3,1,3,2,2,3,1,1]
-# o3 = [2,3,3,3,3,1,2,1,3,2]
-# o4 = [2,1,1,2,3,1,3,2,3,1]
-# o5 = [3,3,3,1,3,2,1,3,1,1]
-# o6 = [2,1,1,2,2,2,2,3,2,3,1,1,1,2,3,3,2,3,3,1]
-# o7 = [1,1,3,1,3,3,2,3,2,3,2,1,1,2,2,2,2,3,1,2]
-# o8 = [1,3,2,1,3,2,2,2,2,1,2,1,3,2,2,2,2,1,2,2]
-# o9 = [3,2,2,1,3,2,1,2,3,3,1,3,1,2,2,3,2,1,3,3]
-# o10 = [2,2,1,3,2,2,1,3,1,1,2,3,3,1,1,3,3,1,1,3]
-
-# seq1 = (Vector{Int})[o1; o2; o3; o4; o5]
-# seq2 = (Vector{Int})[o6; o7; o8; o9; o10]
-# seq3 = (Vector{Int})[o1; o2; o3; o4; o5; o6; o7; o8; o9; o10]
-
-# # First set of sequences
-# model = dHMM(2,3) # re-initialize with random params
-# ch = baum_welch!(model, seq1; max_iter=1000, tol=1e-7)
-# @test(all(round(sum(model.A,2),15) .== 1.0))
-# @test(all(round(sum(model.B,2),15) .== 1.0))
-# @test(round(sum(model.p),15) == 1.0)
-# @test(all(diff(ch) .>= -1e-10))
-# if length(ch)<1000
-#   @test(ch[end] - ch[end-1] < 1e-7)
-# end
-
-# # Second set of sequences
-# model = dHMM(2,3) # re-initialize with random params
-# ch = baum_welch!(model, seq2; max_iter=1000, tol=1e-7)
-# @test(all(round(sum(model.A,2),15) .== 1.0))
-# @test(all(round(sum(model.B,2),15) .== 1.0))
-# @test(round(sum(model.p),15) == 1.0)
-# #@test(all(diff(ch) .>= -1e-10))
-# if length(ch)<1000
-#   @test(ch[end] - ch[end-1] < 1e-7)
-# end
-
-# # All sequences
-# model = dHMM(2,3) # re-initialize with random params
-# ch = baum_welch!(model, seq3; max_iter=100, tol=NaN)
-# @test(all(round(sum(model.A,2),15) .== 1.0))
-# @test(all(round(sum(model.B,2),15) .== 1.0))
-# @test(round(sum(model.p),15) == 1.0)
-
-# These tests fail...
-#    @test(all(diff(ch) .>= 0.0))
-#    @test(ch[end] - ch[end-1] < 1e-7)
-# potentially because having different length observation sequences
-# violates some assumptions?

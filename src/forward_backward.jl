@@ -52,7 +52,7 @@ function forward(hmm::HMM, o::Vector; scaling=true)
 	end
 end
 
-function backward(hmm::HMM, o::Vector; scale_coeff=None)
+function backward(hmm::HMM, o::Vector; scale_coeff=nothing)
 	# scale_coeff are 1/sum(alpha[t,:]) calculated by forward algorithm
 	n_obs = length(o)
 
@@ -60,7 +60,7 @@ function backward(hmm::HMM, o::Vector; scale_coeff=None)
 	beta = zeros(n_obs, hmm.n)
 
 	# base case (initialize at end)
-	if scale_coeff == None
+	if scale_coeff == nothing
 		beta[end,:] += 1
 	else
 		if length(scale_coeff) != n_obs
@@ -76,7 +76,7 @@ function backward(hmm::HMM, o::Vector; scale_coeff=None)
 				beta[t,i] += hmm.A[i,j] * pdf(hmm.B[j],o[t+1]) * beta[t+1,j]
 			end
 		end
-		if scale_coeff != None
+		if scale_coeff != nothing
 			beta[t,:] *= scale_coeff[t]
 		end
 	end

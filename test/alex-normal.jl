@@ -25,7 +25,7 @@ A = [ 0.9 0.1 ;
 B = (Distribution)[ Normal(μ1,σ1) , Normal(μ2,σ2) ]
 
 model_true = HMM(A,B)
-s,o = generate(model_true,10_000)
+s,o = rand(model_true,10_000)
 
 model = HMM(2,Normal())
 fit!(model,o)
