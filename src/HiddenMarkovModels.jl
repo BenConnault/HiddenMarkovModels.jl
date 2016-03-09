@@ -36,7 +36,7 @@ include("rkhs_filtering.jl")
 export line
 export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, Dirac, HD
 export sumrule, chainrule, conditioningrule, bayesrule
-export filtr, filtersmoother
+export filtr, filtersmoother, estep
 
 #############################################
 

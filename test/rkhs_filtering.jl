@@ -22,16 +22,19 @@ mkb=RKHSMap(HD{1},HD{2},line(xx),B,yy)
 mk=chainrule(mka,mkb)
 ini=RKHSLeftElement(HD{1},line(p),xx)
 
-pre,up=filtr(mk,ini,data)
-rev,post=filtersmoother(mk,ini,data)
+# filt=filtr(mk,ini,data)
+filt,smoo=filtersmoother(mk,ini,data)
+
+eweights=estep(mk,ini,data)
+
 
 true_filter= [ 0.625   0.7332  0.8173  0.5884  0.3212 ;
                  0.375   0.2668  0.1827  0.4116  0.6788 ]
 
-filter_from_rkhs=hcat(map(i->up[i].weights[1],1:5),map(i->up[i].weights[2],1:5))'
+filter_from_rkhs=hcat(map(i->filt[i].weights[1],1:5),map(i->filt[i].weights[2],1:5))'
 filter_from_ddm=fil
 
-smoother_from_rkhs=hcat(map(i->post[i].weights[1],1:5),map(i->post[i].weights[2],1:5))'
+smoother_from_rkhs=hcat(map(i->smoo[i].weights[1],1:5),map(i->smoo[i].weights[2],1:5))'
 smoother_from_ddm=hcat(sum(cond[:,:,1],2),hcat(map(i->sum(cond[:,:,i-1],1)[1],2:5),map(i->sum(cond[:,:,i-1],1)[2],2:5))')
 
 tol=1e-3
