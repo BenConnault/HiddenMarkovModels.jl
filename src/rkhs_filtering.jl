@@ -62,7 +62,7 @@ function estep{H,Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{H,RKHS2{Hx,Hy}},initial,
 		conditional=sumrule(Dirac(Hy,data[t]),transition)		# P(X_{t+1},Y_{t+1} | X_t, Y_t=y_t) = P(X_{t+1},Y_{t+1} | X_t, Y_{1:t}=y_{1:t})
 		posterior=bayesrule(prior,conditional,lambda=lambda)	# P(X_t | X_{t+1},Y_{t+1}, Y_{1:t}=y_{1:t})
 		revdict=sumrule(Dirac(Hy,data[t+1]),posterior) 			# P(X_t | X_{t+1}, Y_{1:t+1}=y_{1:t+1}) = P(X_t | X_{t+1}, Y_{1:T}=y_{1:T})
-		eweights[t]=Dict(T-1 => transpose(chainrule(smoother,revdict))) # P(X_t,X_{t+1} | Y_{1:T}=y_{1:T})			
+		eweights[t]=transpose(chainrule(smoother,revdict)) 		# P(X_t,X_{t+1} | Y_{1:T}=y_{1:T})			
 		smoother=sumrule(smoother,revdict)              		# P(X_t | Y_{1:T}=y_{1:T})
 	end
 	eweights
