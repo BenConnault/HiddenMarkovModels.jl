@@ -2,6 +2,7 @@ using Base.Test
 using Distributions
 using HiddenMarkovModels
 
-# include("ben.jl")
-include("alex-discrete.jl")
-include("alex-normal.jl")
+include("dhmm.jl")
+include("hmm_discrete.jl")
+include("hmm_normal.jl")
+include("rkhs.jl")
