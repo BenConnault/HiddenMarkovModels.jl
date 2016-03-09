@@ -20,8 +20,9 @@ end
 # particular case of interest: P(dx1) is a Dirac, this gives lambda((x1=some_x1,x2),dx3)
 function sumrule{H1,H2,H3}(measure::RKHSLeftElement{H1},transition::RKHSMap{RKHS2{H1,H2},H3})
 	leftpoints1,leftpoints2=unpack(transition.leftpoints)
-	D=kernel(H1,measure.points,leftpoints1)
-	RKHSMap(H2,H3,leftpoints2,scale(D,transition.weights),transition.rightpoints)
+	G=kernel(H1,measure.points,line(leftpoints1))
+	V=vec(measure.weights*G)
+	RKHSMap(H2,H3,line(leftpoints2),scale(V,transition.weights),transition.rightpoints)
 end
 
 sumrule{H1,H3}(measure::RKHSLeftElement{H1},transition::RKHSMap{RKHS2{H1,H1},H3})=error("Ambiguous sumrule.")
@@ -31,9 +32,13 @@ sumrule{H1,H3}(measure::RKHSLeftElement{H1},transition::RKHSMap{RKHS2{H1,H1},H3}
 # particular case of interest: P(dx2) is a Dirac, this gives lambda((x1,x2=some_x2),dx3)
 function sumrule{H1,H2,H3}(measure::RKHSLeftElement{H2},transition::RKHSMap{RKHS2{H1,H2},H3})
 	leftpoints1,leftpoints2=unpack(transition.leftpoints)
-	D=kernel(H2,measure.points,leftpoints2)
-	RKHSMap(H1,H3,leftpoints1,scale(D,transition.weights),transition.rightpoints)
+	G=kernel(H2,measure.points,line(leftpoints2))
+	V=vec(measure.weights*G)
+	RKHSMap(H1,H3,line(leftpoints1),scale(V,transition.weights),transition.rightpoints)
 end
+
+# example: partial of Q((x,y),(dx',dy'))=Q(x,(dx',dy')) with respect to P(dy)=Dirac(y_value) => Q(x,(dx',dy'))
+sumrule{H1,H2,H3}(measure::RKHSLeftElement{H1},transition::RKHSMap{H2,H3})=transition
 
 # Markov kernel transition with partial conditional independence on one of the inputs:
 # P((dx1,dx1)) lambda((x1,x2),dx3)=P((dx1,dx1)) lambda(x1,dx3)
@@ -55,7 +60,7 @@ function sumrule{H1,H2}(transition::RKHSMap{H1,H2},func::RKHSRightElement{H2})
 	RKHSRighElement(H1,transition.leftpoints,transition.weights*G*func.weights)
 end
 
-#aa is an array of tuples
+#aa is an array (think line or vector) of tuples
 function unpack(aa)
 	n=length(aa)
 	a1=Array(eltype(aa[1][1]),n)
@@ -151,8 +156,9 @@ function chainrule{H1,H2,H3}(transition1::RKHSMap{H1,H2},transition2::RKHSMap{H2
 	RKHSMap(H1,RKHS2{H2,H3},transition1.leftpoints,reshape(weights,d1,d2a*d3),vec(rightpoints))
 end
 
-
-### CONDITIONING
+###################################
+### CONDITIONING RULE
+###################################
 
 # Comments:
 # (1) the expression below is definitely valid for the particular case of interest:
@@ -176,7 +182,9 @@ end
 conditioningrule{H1,H2}(joint::RKHSLeftElement{RKHS2{H1,H2}};lambda=0.0)=conditioningrule(RKHSMap(joint);lambda=0.0)
 
 
+###################################
 ### BAYES RULE
+###################################
 
 bayesrule{H1,H2}(prior::RKHSLeftElement{H1},conditional::RKHSMap{H1,H2};lambda=0.0)=
 	conditioningrule(transpose(chainrule(prior,conditional)),lambda=lambda)

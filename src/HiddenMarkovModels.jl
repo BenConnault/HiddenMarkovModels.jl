@@ -10,7 +10,7 @@ include("utils_stochasticmatrices.jl")
 
 # Ben's exports
 export 	coef!, rand, loglikelihood, mle, dim, 
-		em, viterbi,
+		em, viterbi, filtr,
 		baumwelch, hmm, theta2ab
 
 #Alex's exports
@@ -36,7 +36,7 @@ include("rkhs_filtering.jl")
 export line
 export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, Dirac, HD
 export sumrule, chainrule, conditioningrule, bayesrule
-export filtr
+export filtr, filtersmoother
 
 #############################################
 

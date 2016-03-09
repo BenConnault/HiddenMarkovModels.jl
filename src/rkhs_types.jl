@@ -85,7 +85,23 @@ Dirac{H<:RKHS}(::Type{H},x)=RKHSLeftElement(H,fill(1.0,1,1),[x])
 
 
 
-kernel{H1<:RKHS,H2<:RKHS}(::RKHS2{H1,H2},x1,x2)=kernel(H1,x1[1],x2[1])*kernel(H2,x1[2],x2[2])
+function kernel{H<:RKHS}(::Type{H},xx1::AbstractVector,xx2::AbstractMatrix)
+	kern(x1,x2)=kernel(H,x1,x2)
+	broadcast(kern,xx1,xx2)
+end
+
+# repeat of previous definition, only purpose: avoid ambiguities
+function kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},xx1::AbstractVector,xx2::AbstractMatrix)
+	kern(x1,x2)=kernel(RKHS2{H1,H2},x1,x2)
+	## the following fails because of a bad type inference:
+	# broadcast(kern,xx1,xx2)
+	## we help the type inference explicitly:
+	ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))   
+	broadcast!(kern,ret,xx1,xx2)
+	ret
+end
+
+kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},x1,x2)=kernel(H1,x1[1],x2[1])*kernel(H2,x1[2],x2[2])
 
 ######################################
 ### CANONICAL DISCRETE RKHS
@@ -96,7 +112,6 @@ immutable DiscreteRKHS{T} <: RKHS end
 typealias HD DiscreteRKHS
 
 kernel{T<:DiscreteRKHS}(::Type{T},x1::Int,x2::Int)=1.0*(x1==x2)
-kernel{T<:DiscreteRKHS}(::Type{T},x1::AbstractVector{Int},x2::AbstractMatrix{Int})=broadcast(==,x1,x2)
 
 
 function leftcompact{H1<:DiscreteRKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})

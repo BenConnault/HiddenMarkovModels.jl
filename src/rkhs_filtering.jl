@@ -6,8 +6,8 @@
 function filtr{H,Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{H,RKHS2{Hx,Hy}},initial,data;lambda=0.0)
 	H<:Union{Hx,RKHS2{Hx,Hy}}
 	T=length(data)
-	predicts=Dict(2=>sumrule(RKHSLeftElement(chainrule(initial,Dirac(Hy,data[1]))),transition))
 	updates=Dict(1=>initial)
+	predicts=Dict(2=>sumrule(RKHSLeftElement(chainrule(updates[1],Dirac(Hy,data[1]))),transition))
 	updates[2]=sumrule(Dirac(Hy,data[2]),conditioningrule(transpose(compact(RKHSMap(predicts[2]))),lambda=lambda))
 
 	for t=2:T-1
@@ -19,7 +19,7 @@ function filtr{H,Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{H,RKHS2{Hx,Hy}},initial,
 		# (1) create product measure ([yesterday's predict] x [data Dirac]) [chainrule]
 		# + RKHSLeftElement for casting as vector in H1xH2 rather than a (H1,H2) matrix
 		# (2) transition it to t+1 [sumrule] 
-		predicts[t+1]=sumrule(RKHSLeftElement(chainrule(updates[t],deltay)),transition)
+		predicts[t+1]=sumrule(RKHSLeftElement(chainrule(updates[t],Dirac(Hy,data[t]))),transition)
 		# An alternative would be:
 		# sumrule(updates[t],(sumrule(deltay,transition)))
 		# (1) partial transition of [data Dirac]
@@ -29,21 +29,32 @@ function filtr{H,Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{H,RKHS2{Hx,Hy}},initial,
 	predicts,updates
 end
 
-function filtersmoother(transition,initial,data)
-	predicts,updates=filter(transition,initial,data)
+function filtersmoother{H,Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{H,RKHS2{Hx,Hy}},initial,data;lambda=0.0)
+	predicts,updates=filtr(transition,initial,data,lambda=lambda)
 
-	revdicts=Array(RKHSMap{RKHS2{Hx,Hy},Hx},T)
-	posteriors=Array(RKHSLeftElement{Hx},T)
-	posterios[T]=copy(predicts[T])
+	T=length(data)
+
+	posteriors=Dict(T => updates[T])
+	prior=updates[T-1]
+	conditional=sumrule(Dirac(Hy,data[T-1]),transition)
+	posterior=bayesrule(prior,conditional,lambda=lambda)
+	revdicts=Dict(T-1 => sumrule(Dirac(Hy,data[T]),posterior))
+	posteriors[T-1]=sumrule(posteriors[T],revdicts[T-1])
 
 	for t=T-1:-1:1
-		revdicts[t]=bayesrule(leftmargin(rightmargin(transition,2,data[t+1]),2,data[t]),updates[t])
+		prior=updates[t]
+		conditional=sumrule(Dirac(Hy,data[t]),transition)
+		posterior=bayesrule(prior,conditional,lambda=lambda)
+		revdicts[t]=sumrule(Dirac(Hy,data[t+1]),posterior)
 		posteriors[t]=sumrule(posteriors[t+1],revdicts[t])
 	end
 	# predicts,updates,revdicts,posteriors    #could return predicts and updates if needed but I don't know a used case as of now
 	revdicts,posteriors
 end
 
+function estep{H,Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{H,RKHS2{Hx,Hy}},initial,data;lambda=0.0)
+
+end
 
 # function estep(transition,initial,data)
 # 	revdicts,posteriors=filtersmoother(transition,initial,data)
