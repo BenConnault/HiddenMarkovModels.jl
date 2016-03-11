@@ -98,7 +98,7 @@ end
 # lambda3(x1,dx3)= integral_dx2 lambda1(x1,dx2) lambda2(x2,dx3)
 function sumrule{H1,H2,H3}(transition1::RKHSMap{H1,H2},transition2::RKHSMap{H2,H3})
 	G=kernel(H2,transition1.rightpoints,transition2.leftpoints)
-	RKHSMap(H1,H3,transition1.leftpoints,transition1.weights*G*transition2.weights,transition2.rightpoints2)
+	RKHSMap(H1,H3,transition1.leftpoints,transition1.weights*G*transition2.weights,transition2.rightpoints)
 end
 
 
@@ -131,11 +131,20 @@ end
 # Q((dx1,dx2))=P(dx1)lambda(x1,dx2)
 # returns a joint distribution as a map
 # similar to a sumrule but we don't contract on the first index
-function chainrule{H1,H2}(measure::RKHSLeftElement{H1},transition::RKHSMap{H1,H2})
-	G=kernel(H1,measure.points,transition.leftpoints)
-	weights=scale(vec(measure.weights),G*transition.weights)
+function chainrule{H1,H2}(measure::RKHSLeftElement{H1},transition::RKHSMap{H1,H2},G1::AbstractMatrix)
+	weights=scale(vec(measure.weights),G1*transition.weights)
 	RKHSMap(H1,H2,line(measure.points),weights,transition.rightpoints)
 end
+
+function transposechainrule{H1,H2}(measure::RKHSLeftElement{H1},transition::RKHSMap{H1,H2},G1::AbstractMatrix)
+	weights=scale(At_mul_Bt(transition.weights,G1),vec(measure.weights))
+	println(typeof(transition.rightpoints))
+	RKHSMap(H2,H1,line(transition.rightpoints),weights,measure.points)
+end
+
+
+chainrule{H1,H2}(measure::RKHSLeftElement{H1},transition::RKHSMap{H1,H2})=
+	chainrule(measure,transition,kernel(H1,measure.points,transition.leftpoints))
 
 #degenerate chain rule for independent distributions
 function chainrule{H1,H2}(measure1::RKHSLeftElement{H1},measure2::RKHSLeftElement{H2})
@@ -160,6 +169,10 @@ end
 ### CONDITIONING RULE
 ###################################
 
+# from C_XY = (x1 W y), do:
+# C_XX = (x1 D x1), D = diagm(sum(W,2))
+# C_XX \ C_XY  = (x1 D x1) \ (x2 W y) \approx (x1 [D^-1 G(x1,x2)^-1 W] y)  
+
 # Comments:
 # (1) the expression below is definitely valid for the particular case of interest:
 #   (1a) discrete distributions
@@ -171,11 +184,44 @@ end
 
 # condition on H1 always
 # transpose before using if you want to condition on H2
-function conditioningrule{H1,H2}(joint::RKHSMap{H1,H2};lambda=0.0)
-	D=1./vec(sum(full(joint.weights),2))    #full() is a stopgap unti sum(m,2) works for ::Diagonal matrices
+
+
+
+function conditioningrule{H1,H2}(joint::RKHSMap{H1,H2},G::AbstractMatrix;lambda=0.0)
+	D=vec(sum(full(joint.weights),2))    #full() is a stopgap unti sum(m,2) works for ::Diagonal matrices
+	println("positive D's: ",sum(D.>0)," / ",length(D))
+	M1=scale(G,D)^2
+	# println("det=" ,det(G))
+	# println(round(inv(G),3))
+	M2=(M1+lambda*I)\full(joint.weights)  #full() is a stopgap unti a\m works for m::Diagonal matrices
+	# weights=G*M2
+	# scale!(D,weights)
+	#or for numerical stability: 
+	weights=scale(D,G)*M2
+	
+	# weights=(scale(G,D)+lambda*I)\full(joint.weights)
+	# println()
+	# println(round(weights,3))
+	RKHSMap(H1,H2,joint.leftpoints,weights,joint.rightpoints)
+end
+
+
+conditioningrule{H1,H2}(joint::RKHSMap{H1,H2};lambda=0.0)=
+	conditioningrule(joint,kernel(H1,vec(joint.leftpoints),joint.leftpoints),lambda=lambda)
+
+
+
+function conditioningrule2{H1,H2}(joint::RKHSMap{H1,H2};lambda=0.0)
+	D=vec(sum(full(joint.weights),2))    #full() is a stopgap unti sum(m,2) works for ::Diagonal matrices
+	println("positive D's: ",sum(D.>0)," / ",length(D))
 	G=kernel(H1,vec(joint.leftpoints),joint.leftpoints)
+	scale!(G,D)
+	# println("det=" ,det(G))
+	# println(round(inv(G),3))
 	weights=(G+lambda*I)\full(joint.weights)  #full() is a stopgap unti a\m works for m::Diagonal matrices
-	scale!(D,weights)
+	# scale!(D,weights)
+	# println()
+	# println(round(weights,3))
 	RKHSMap(H1,H2,joint.leftpoints,weights,joint.rightpoints)
 end
 
@@ -189,6 +235,7 @@ conditioningrule{H1,H2}(joint::RKHSLeftElement{RKHS2{H1,H2}};lambda=0.0)=conditi
 bayesrule{H1,H2}(prior::RKHSLeftElement{H1},conditional::RKHSMap{H1,H2};lambda=0.0)=
 	conditioningrule(transpose(chainrule(prior,conditional)),lambda=lambda)
 
-
+bayesrule{H1,H2}(prior::RKHSLeftElement{H1},conditional::RKHSMap{H1,H2},G1::AbstractMatrix,G2::AbstractMatrix;lambda=0.0)=
+	conditioningrule(transposechainrule(prior,conditional,G1),G2,lambda=lambda)
 
 # kernel(T,leftpoints,rightpoints)=broadcast(kernel(T),measure.points,func.points)

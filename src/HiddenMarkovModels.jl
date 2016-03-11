@@ -3,6 +3,8 @@ module HiddenMarkovModels
 importall DynamicDiscreteModels
 importall Distributions
 using StatsBase:sample,WeightVec,StatisticalModel
+import Base.norm
+
 
 # When I get around to spinning of a Markov.jl
 # import Markov: rsm, nsm, z2q, q2z
@@ -28,15 +30,17 @@ include("hmm_fit.jl")
 #############################################
 # RKHS branch
 import Base.transpose
+import Distributions.moment
 
 include("rkhs_types.jl")
 include("rkhs_calculus.jl")
 include("rkhs_filtering.jl")
+include("rkhs_spaces.jl")
 
 export line
-export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, Dirac, HD
+export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, distance, Dirac, HD, HG, moment
 export sumrule, chainrule, conditioningrule, bayesrule
-export filtr, filtersmoother, estep
+export filtr, filtr2, filtersmoother, estep
 
 #############################################
 

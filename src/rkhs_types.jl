@@ -10,13 +10,28 @@ type RKHS2{H1<:RKHS,H2<:RKHS} <: RKHS end
 type RKHSLeftElement{H <: RKHS,PT<:AbstractVector,WT<:AbstractMatrix}
 	weights::WT   #line vector
 	points::PT
+	function RKHSLeftElement(weights,points)
+		@assert length(weights)==length(points)
+		new(weights,points)
+	end
 end
 
-RKHSLeftElement{H<:RKHS,PT,WT}(::Type{H},weights::WT,points::PT)= RKHSLeftElement{H,PT,WT}(weights,points)
+RKHSLeftElement{H<:RKHS,PT<:AbstractVector,WT<:AbstractMatrix}(::Type{H},weights::WT,points::PT)= RKHSLeftElement{H,PT,WT}(weights,points)
+
+function RKHSLeftElement{H}(::Type{H},measure::Distribution,m::Int=100)
+	println("here")
+	points=rand(measure,m)
+	weights=fill(1/m,1,100)
+	RKHSLeftElement(H,weights,points)
+end
 
 type RKHSRightElement{H <: RKHS,PT<:AbstractMatrix,WT<:AbstractVector}
 	points::PT   #line vector
-	weights::WT 
+	weights::WT
+	function RKHSRightElement(weights,points)
+		@assert length(weights)==length(points)
+		new(points,weights)
+	end
 end
 
 RKHSRightElement{H<:RKHS,PT,WT}(::Type{H},points::PT,weights::WT)= RKHSRightElement{H,PT,WT}(points,weights)
@@ -27,6 +42,11 @@ type RKHSMap{H1<: RKHS,H2<: RKHS,PT1<:AbstractMatrix,WT<:AbstractMatrix,PT2<:Abs
 	leftpoints::PT1  #line vector
 	weights::WT 
 	rightpoints::PT2
+	function RKHSMap(leftpoints,weights,rightpoints)
+		@assert length(leftpoints)==size(weights,1)
+		@assert length(rightpoints)==size(weights,2)
+		new(leftpoints,weights,rightpoints)
+	end
 end
 
 RKHSMap{H1<:RKHS,H2<:RKHS,PT1,WT,PT2}(::Type{H1},::Type{H2},leftpoints::PT1,weights::WT,rightpoints::PT2)=
@@ -85,9 +105,14 @@ Dirac{H<:RKHS}(::Type{H},x)=RKHSLeftElement(H,fill(1.0,1,1),[x])
 
 
 
+
+
+
 function kernel{H<:RKHS}(::Type{H},xx1::AbstractVector,xx2::AbstractMatrix)
 	kern(x1,x2)=kernel(H,x1,x2)
-	broadcast(kern,xx1,xx2)
+	ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))  
+	broadcast!(kern,ret,xx1,xx2)
+	ret
 end
 
 # repeat of previous definition, only purpose: avoid ambiguities
@@ -103,18 +128,8 @@ end
 
 kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},x1,x2)=kernel(H1,x1[1],x2[1])*kernel(H2,x1[2],x2[2])
 
-######################################
-### CANONICAL DISCRETE RKHS
-######################################
 
-immutable DiscreteRKHS{T} <: RKHS end
-
-typealias HD DiscreteRKHS
-
-kernel{T<:DiscreteRKHS}(::Type{T},x1::Int,x2::Int)=1.0*(x1==x2)
-
-
-function leftcompact{H1<:DiscreteRKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})
+function leftcompact{H1<:RKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})
 	index=1
 	cw=zeros(full(joint.weights))     			#cw  = compact weights
 	clp=zeros(joint.leftpoints) 		        #clp = compact left points
@@ -126,14 +141,15 @@ function leftcompact{H1<:DiscreteRKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})
 			clpd[x]=index
 			clp[index]=x
 		end		
-		broadcast!(+,slice(cw,clp[x],:),slice(cw,clp[x],:),slice(joint.weights,i,:))
+		#add the new line slice(joint.weights,i,:) to the correct line slice(cw,clpd[x],:)
+		broadcast!(+,slice(cw,clpd[x],:),slice(cw,clpd[x],:),slice(joint.weights,i,:))
 	end
 	RKHSMap(H1,H2,slice(clp,:,1:index),slice(cw,1:index,:),joint.rightpoints)
 end
 
 
 
-function rightcompact{H1<:RKHS,H2<:DiscreteRKHS}(joint::RKHSMap{H1,H2})
+function rightcompact{H1<:RKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})
 	index=1
 	cw=zeros(full(joint.weights))           	#cw  = compact weights
 	crp=zeros(joint.rightpoints) 		        #crp = compact right points
@@ -144,13 +160,32 @@ function rightcompact{H1<:RKHS,H2<:DiscreteRKHS}(joint::RKHSMap{H1,H2})
 			index+=1
 			crpd[x]=index
 			crp[index]=x
-		end		
-		broadcast!(+,slice(cw,:,crp[x]),slice(cw,:,crp[x]),slice(joint.weights,:,j))
+		end
+		#add the new column slice(joint.weights,:,j) to the correct column slice(cw,:,crpd[x])
+		broadcast!(+,slice(cw,:,crpd[x]),slice(cw,:,crpd[x]),slice(joint.weights,:,j))
 	end
 	RKHSMap(H1,H2,joint.leftpoints,slice(cw,:,1:index),slice(crp,1:index))
 end
 
-compact{H1<:DiscreteRKHS,H2<:DiscreteRKHS}(joint::RKHSMap{H1,H2})=leftcompact(rightcompact(joint))
-compact{H1<:RKHS,H2<:DiscreteRKHS}(joint::RKHSMap{H1,H2})=rightcompact(joint)
-compact{H1<:DiscreteRKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})=leftcompact(joint)
-compact{H1<:RKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})=joint
+compact{H1<:RKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})=leftcompact(rightcompact(joint))
+
+
+function norm{H1 <: RKHS}(measure::RKHSLeftElement{H1})
+	G=kernel(H1,measure.points,line(measure.points))
+	sqrt((measure.weights*G*vec(measure.weights))[1])
+end
+
+function distance{H1 <: RKHS}(measure1::RKHSLeftElement{H1},measure2::RKHSLeftElement{H1})
+	G11=kernel(H1,measure1.points,line(measure1.points))
+	G12=kernel(H1,measure1.points,line(measure2.points))
+	G22=kernel(H1,measure2.points,line(measure2.points))
+	s11=measure1.weights*G11*vec(measure1.weights)
+	s22=measure2.weights*G22*vec(measure2.weights)
+	s12=measure1.weights*G12*vec(measure2.weights)
+	sqrt(s11[1]+s22[1]-2*s12[1])
+end
+
+distance{H1 <: RKHS}(measure1::RKHSLeftElement{H1},measure2::Distribution,m=100)=distance(measure1,RKHSLeftElement(H1,measure2,m))
+distance{H1 <: RKHS}(measure2::Distribution,measure1::RKHSLeftElement{H1},m=100)=distance(measure1,measure2)
+
+moment(measure::RKHSLeftElement,n::Int)=dot(vec(measure.weights),measure.points.^n)
