@@ -136,10 +136,10 @@ function chainrule{H1,H2}(measure::RKHSLeftElement{H1},transition::RKHSMap{H1,H2
 	RKHSMap(H1,H2,line(measure.points),weights,transition.rightpoints)
 end
 
-function transposechainrule{H1,H2}(measure::RKHSLeftElement{H1},transition::RKHSMap{H1,H2},G1::AbstractMatrix)
-	weights=scale(At_mul_Bt(transition.weights,G1),vec(measure.weights))
-	println(typeof(transition.rightpoints))
-	RKHSMap(H2,H1,line(transition.rightpoints),weights,measure.points)
+function transposechainrule{H1,H2,WT <: AbstractMatrix,PT1a,PT1b,PT2}(measure::RKHSLeftElement{H1,PT1a,WT},transition::RKHSMap{H1,H2,PT1b,WT,PT2},G1::WT)
+	weights=scale(At_mul_Bt(transition.weights,G1),slice(measure.weights,1,:))
+	# RKHSMap(H2,H1,line(transition.rightpoints),weights,measure.points)
+	RKHSMap(H2,H1,transition.rightpoints',weights,measure.points)    #seems faster than line() when profiling
 end
 
 
@@ -185,19 +185,13 @@ end
 # condition on H1 always
 # transpose before using if you want to condition on H2
 
+#########
 
-
-function conditioningrule{H1,H2}(joint::RKHSMap{H1,H2},G::AbstractMatrix;lambda=0.0)
-	D=vec(sum(full(joint.weights),2))    #full() is a stopgap unti sum(m,2) works for ::Diagonal matrices
+function conditioningrule_inv{H1,H2}(joint::RKHSMap{H1,H2},Gi::AbstractMatrix;lambda=0.0)
+	D=1./vec(sum(full(joint.weights),2))    #full() is a stopgap unti sum(m,2) works for ::Diagonal matrices
 	println("positive D's: ",sum(D.>0)," / ",length(D))
-	M1=scale(G,D)^2
-	# println("det=" ,det(G))
-	# println(round(inv(G),3))
-	M2=(M1+lambda*I)\full(joint.weights)  #full() is a stopgap unti a\m works for m::Diagonal matrices
-	# weights=G*M2
-	# scale!(D,weights)
-	#or for numerical stability: 
-	weights=scale(D,G)*M2
+	weights=Gi*full(joint.weights)  #full() is a stopgap unti a\m works for m::Diagonal matrices
+	weights=scale!(D,weights)
 	
 	# weights=(scale(G,D)+lambda*I)\full(joint.weights)
 	# println()
@@ -205,7 +199,38 @@ function conditioningrule{H1,H2}(joint::RKHSMap{H1,H2},G::AbstractMatrix;lambda=
 	RKHSMap(H1,H2,joint.leftpoints,weights,joint.rightpoints)
 end
 
+function conditioningrule_inv{H1,H2}(joint::RKHSMap{H1,H2};lambda=0.0)
+	G1=kernel(H1,vec(joint.leftpoints),joint.leftpoints)
+	G1i=inv(Symmetric(G1))
+	G1i=(G1i.*(abs(G1i).>.01))
+	conditioningrule(joint,G1i,lambda=lambda)
+end
+##########
 
+#this is feeding the non-inverted Gramian
+function conditioningrule{H1,H2}(joint::RKHSMap{H1,H2},G::AbstractMatrix;lambda=0.0)
+	D=vec(sum(full(joint.weights),2))    #full() is a stopgap unti sum(m,2) works for ::Diagonal matrices
+	println("positive D's: ",sum(D.>0)," / ",length(D))
+	M1=scale(G,D)
+	# println("det=" ,det(G))
+	# println(round(inv(G),3))
+	M2=M1*M1
+	for i=1:size(M2,1)
+		M2[i,i]+=lambda
+	end
+	M3=M2\full(joint.weights)  #full() is a stopgap unti a\m works for m::Diagonal matrices
+	# weights=G*M2
+	# scale!(D,weights)
+	#or for numerical stability: 
+	weights=scale(D,G)*M3
+	
+	# weights=(scale(G,D)+lambda*I)\full(joint.weights)
+	# println()
+	# println(round(weights,3))
+	RKHSMap(H1,H2,joint.leftpoints,weights,joint.rightpoints)
+end
+
+#wrapper for the previous one
 conditioningrule{H1,H2}(joint::RKHSMap{H1,H2};lambda=0.0)=
 	conditioningrule(joint,kernel(H1,vec(joint.leftpoints),joint.leftpoints),lambda=lambda)
 
@@ -235,7 +260,7 @@ conditioningrule{H1,H2}(joint::RKHSLeftElement{RKHS2{H1,H2}};lambda=0.0)=conditi
 bayesrule{H1,H2}(prior::RKHSLeftElement{H1},conditional::RKHSMap{H1,H2};lambda=0.0)=
 	conditioningrule(transpose(chainrule(prior,conditional)),lambda=lambda)
 
-bayesrule{H1,H2}(prior::RKHSLeftElement{H1},conditional::RKHSMap{H1,H2},G1::AbstractMatrix,G2::AbstractMatrix;lambda=0.0)=
-	conditioningrule(transposechainrule(prior,conditional,G1),G2,lambda=lambda)
+bayesrule{H1,H2}(prior::RKHSLeftElement{H1},conditional::RKHSMap{H1,H2},G1::AbstractMatrix,G2i::AbstractMatrix;lambda=0.0)=
+	conditioningrule(transposechainrule(prior,conditional,G1),G2i,lambda=lambda)
 
 # kernel(T,leftpoints,rightpoints)=broadcast(kernel(T),measure.points,func.points)

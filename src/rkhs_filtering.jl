@@ -43,14 +43,24 @@ function filtr2{H1,H2,Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{H1,Hy},transition2
 
 	T=length(data)
 	filter=Dict(1=>initial)
-	Gx=gramx(transition2.rightpoints,transition1)
+
+	#for diagnostic
+	# matrices=Dict(1=>zeros(1,1))
+	
+	# Gram matrix from support points of predict (rightpoints of transition2)
+	# to x-support points of transition 1 
+	Gx=gramx(transition2.rightpoints,transition1)   
+	
 	Gy=kernel(Hy,transition1.rightpoints,line(transition1.rightpoints))
+	# Gyi=inv(Symmetric(Gy))
+	# Gyi=(Gyi.*(abs(Gyi).>.01))
 
 	for t=1:T-1
 		prior=filter[t]
 		conditional=sumrule(Dirac(Hy,data[t]),transition1)
 		predict=bayesrule(prior,conditional,Gx,Gy,lambda=lambda)
 		
+		# predict,matrices[t+1]=predict
 		# yy=linspace(-2,2,20)
 		# mu(y)=moment(sumrule(Dirac(Hy,y),predict),1)
 		# plot(yy,map(mu,yy))
