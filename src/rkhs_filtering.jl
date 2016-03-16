@@ -158,7 +158,7 @@ end
 # of B1 in Bxy, using pre-computed search tree representation of B2 `tree2`.
 # Gxy=Bxy'Bxy is also pre-computed
 # Gx=(the x part of Bxy)'Bx is also pre-computed
-# IN FIRST TEST NO SPEED-UP OBSERVED
+# IN FIRST TEST NO SPEED-UP OBSERVED because most time spent in solve(.) -> get rid of this is no speed-up
 function proj_nn{Hy<:RKHS}(wx,Bx,delta_y,By,::Type{Hy},Bxy,xytree,Gxy,Gx,k::Int)
 	n2=length(Bxy)
 	w=zeros(n2)
@@ -166,8 +166,6 @@ function proj_nn{Hy<:RKHS}(wx,Bx,delta_y,By,::Type{Hy},Bxy,xytree,Gxy,Gx,k::Int)
 	for i=1:length(Bx)
 		inns, dists = knn(xytree, [Bx[i];delta_y], k)
 		Gi=Gxy[inns,inns]
-		@code_warntype(kernel(Hy,unpack(slice(Bxy,inns))[2],fill(delta_y,1,1)))
-		error()
 		aa=slice(Gx,inns,i).* vec(kernel(Hy,unpack(slice(Bxy,inns))[2],fill(delta_y,1,1)))
 		m = Model(solver=IpoptSolver(print_level=0))
 		@defVar(m, 0.0 <= w2[1:k] <= 1.0 )
@@ -253,7 +251,6 @@ function filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSM
 
 	for t=1:T-1
 
-		println(t)
 		### MK1
 		joint=scale(filter[:,t],mk1)
 		# println(joint[1:2,1:2])
@@ -272,7 +269,7 @@ function filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSM
 		# I want to project ((posterior,Bx) x (1.0,delta_{y_t+1}) on Bxy)  
 		B=[(Bx[i],data[t+1])for i=1:length(Bx)]   #probably wasteful construction
 		x1_y2=proj_nn(RKHS2{Hx,Hy},posterior,B,Bxy,xytree,Gxy,kxy)
-		# x1_y2=proj_nn(posterior,Bx,data[t+1],By,Hy,Bxy,xytree,Gxy,Gx,kxy)   #specialized version
+		# x1_y2=proj_nn(posterior,Bx,data[t+1],By,Hy,Bxy,xytree,Gxy,Gx,kxy)   #specialized version (no speed-ud observed as of now)
 		filter[:,t+1]=At_mul_B(mk2,x1_y2)
 
 	end

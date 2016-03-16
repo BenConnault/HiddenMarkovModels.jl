@@ -116,7 +116,7 @@ Dirac{H<:RKHS}(::Type{H},x)=RKHSLeftElement(H,fill(1.0,1,1),[x])
 
 
 
-function kernel{H<:RKHS}(::Type{H},xx1::Vector{Float64},xx2::Matrix{Float64})
+function kernel{H<:RKHS}(::Type{H},xx1::AbstractVector,xx2::AbstractMatrix)
 	# ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))  
 	d1,d2=length(xx1),length(xx2)
 	ret=Array(Float64,d1,d2)
@@ -129,18 +129,18 @@ function kernel{H<:RKHS}(::Type{H},xx1::Vector{Float64},xx2::Matrix{Float64})
 end
 
 # repeat of previous definition, only purpose: avoid ambiguities
-function kernel{H1<:RKHS,H2<:RKHS,T}(::Type{RKHS2{H1,H2}},xx1::Vector{Float64},xx2::Matrix{Float64})
+function kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},xx1::AbstractVector,xx2::AbstractMatrix)
 	d1,d2=length(xx1),length(xx2)
 	ret=Array(Float64,d1,d2)
 	for i2=1:d2
 		for i1=1:d1
-			ret[i1,i2]=kernel(H,xx1[i1],xx2[i2])::Float64
+			ret[i1,i2]=kernel(H1,xx1[i1][1],xx2[i2][1])*kernel(H2,xx1[i1][2],xx2[i2][2])::Float64
 		end
 	end
 	ret
 end
 
-kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},x1,x2)=kernel(H1,x1[1],x2[1])*kernel(H2,x1[2],x2[2])
+kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},x1::Tuple,x2::Tuple)=kernel(H1,x1[1],x2[1])*kernel(H2,x1[2],x2[2])
 
 
 function leftcompact{H1<:RKHS,H2<:RKHS}(joint::RKHSMap{H1,H2})
