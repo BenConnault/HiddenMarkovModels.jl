@@ -3,8 +3,8 @@ reload("HiddenMarkovModels")
 module dev
 
 using Plots
-using AverageShiftedHistograms
 using Base.Test
+using ProfileView
 using HiddenMarkovModels
 using StateSpace
 using Distributions
@@ -113,7 +113,7 @@ function comparefilters(T=10,lambda2=1.0)
 	initial=MvNormal(zeros(1),ones(1,1))
 	fil=filter(model, daty',initial)
 
-	N=1000
+	N=500
 	lambda=1.0/sqrt(N)
 	mk1,mk2,joint=translate2RKHS(model,N,lambda)
 	ini=RKHSLeftElement(Hx,fill(1/N,1,N),vec(rand(fil.state[1],N)))
@@ -128,24 +128,25 @@ function comparefilters(T=10,lambda2=1.0)
 	# title!("y2=$y2")
 	# plot!(xx,map(x->mu2(model,x,y2)[1],xx))
 
-
-	filt=filtr2(mk1,mk2,ini,daty,lambda=lambda2)
+	Bx1=vec(mk1.leftpoints)
+	filt=filtr3(mk1,mk2,ini,daty)
 	
 	true_filter=[fil.state[t].μ[1] for t=1:T]
-	approx_filter=[moment(filt[t],1) for t=1:T]
+	approx_filter=[moment(RKHSLeftElement(Hx,line(filt[:,t]),Bx1),1) for t=1:T]
 
 	plot(1:T,true_filter)
 	plot!(1:T,approx_filter)
 
-	println("true filtered mean: ",round(fil.state[T].μ[1],4))
-	println("approximate filtered mean: ",round(moment(filt[T],1),4))
+	# println("true filtered mean: ",round(fil.state[T].μ[1],4))
+	# println("approximate filtered mean: ",round(moment(filt[T],1),4))
 	fil,filt
 end
 
-fil,filt=comparefilters(2,0.1);
 
 
-# using ProfileView
+fil,filt=comparefilters(50);
+
+
 # Profile.clear()
 # @profile fil,filt=comparefilters(10);
 # ProfileView.view()

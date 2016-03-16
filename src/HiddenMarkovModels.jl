@@ -31,6 +31,9 @@ include("hmm_fit.jl")
 # RKHS branch
 import Base.transpose
 import Distributions.moment
+using JuMP, Ipopt
+using NearestNeighbors
+import NearestNeighbors: Metric, evaluate, euclidean
 
 include("rkhs_types.jl")
 include("rkhs_calculus.jl")
@@ -38,9 +41,9 @@ include("rkhs_filtering.jl")
 include("rkhs_spaces.jl")
 
 export line
-export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, distance, Dirac, HD, HG, moment
+export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, distance, Dirac, HD, HG, moment, kernel
 export sumrule, chainrule, conditioningrule, bayesrule
-export filtr, filtr2, filtersmoother, estep
+export filtr, filtr2, filtr3, filtr4, filtersmoother, estep, project, proj, unpack
 
 #############################################
 

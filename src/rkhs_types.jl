@@ -19,9 +19,8 @@ end
 RKHSLeftElement{H<:RKHS,PT<:AbstractVector,WT<:AbstractMatrix}(::Type{H},weights::WT,points::PT)= RKHSLeftElement{H,PT,WT}(weights,points)
 
 function RKHSLeftElement{H}(::Type{H},measure::Distribution,m::Int=100)
-	println("here")
 	points=rand(measure,m)
-	weights=fill(1/m,1,100)
+	weights=fill(1/m,1,m)
 	RKHSLeftElement(H,weights,points)
 end
 
@@ -105,24 +104,39 @@ Dirac{H<:RKHS}(::Type{H},x)=RKHSLeftElement(H,fill(1.0,1,1),[x])
 
 
 
+# I used the following to make it generic (with a view towards ForwardDiff-ing)
+# But it created type inference issues
+# function kernel{H<:RKHS}(::Type{H},xx1::AbstractVector,xx2::AbstractMatrix)
+# 	kern(x1,x2)=kernel(H,x1,x2)
+# 	ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))  
+# 	broadcast!(kern,ret,xx1,xx2)
+# 	ret
+# end
 
 
 
-function kernel{H<:RKHS}(::Type{H},xx1::AbstractVector,xx2::AbstractMatrix)
-	kern(x1,x2)=kernel(H,x1,x2)
-	ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))  
-	broadcast!(kern,ret,xx1,xx2)
+
+function kernel{H<:RKHS}(::Type{H},xx1::Vector{Float64},xx2::Matrix{Float64})
+	# ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))  
+	d1,d2=length(xx1),length(xx2)
+	ret=Array(Float64,d1,d2)
+	for i2=1:d2
+		for i1=1:d1
+			ret[i1,i2]=kernel(H,xx1[i1],xx2[i2])::Float64
+		end
+	end
 	ret
 end
 
 # repeat of previous definition, only purpose: avoid ambiguities
-function kernel{H1<:RKHS,H2<:RKHS}(::Type{RKHS2{H1,H2}},xx1::AbstractVector,xx2::AbstractMatrix)
-	kern(x1,x2)=kernel(RKHS2{H1,H2},x1,x2)
-	## the following fails because of a bad type inference:
-	# broadcast(kern,xx1,xx2)
-	## we help the type inference explicitly:
-	ret=Array(typeof(kern(xx1[1],xx2[1])),length(xx1),length(xx2))   
-	broadcast!(kern,ret,xx1,xx2)
+function kernel{H1<:RKHS,H2<:RKHS,T}(::Type{RKHS2{H1,H2}},xx1::Vector{Float64},xx2::Matrix{Float64})
+	d1,d2=length(xx1),length(xx2)
+	ret=Array(Float64,d1,d2)
+	for i2=1:d2
+		for i1=1:d1
+			ret[i1,i2]=kernel(H,xx1[i1],xx2[i2])::Float64
+		end
+	end
 	ret
 end
 
@@ -174,6 +188,16 @@ function norm{H1 <: RKHS}(measure::RKHSLeftElement{H1})
 	G=kernel(H1,measure.points,line(measure.points))
 	sqrt((measure.weights*G*vec(measure.weights))[1])
 end
+
+# most time is spent in computing the Gramian matrix in a naive implementation
+# this is clearly not necessary
+function distance(G11,weights1,weights2)
+	dw=weights1-weights2
+	sqrt((dw'*G11*dw)[1])
+end
+
+dist(G1,weights1,B1,weights2,B2)=distance(G1,weights1,proj(weights2,B2,B1))
+dist(G1,weights1,B1,distribution,n=1000)=distance(G1,weights1,proj(fill(1/n,n),rand(distribution,n),B1))
 
 function distance{H1 <: RKHS}(measure1::RKHSLeftElement{H1},measure2::RKHSLeftElement{H1})
 	G11=kernel(H1,measure1.points,line(measure1.points))
