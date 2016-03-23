@@ -3,7 +3,6 @@ reload("HiddenMarkovModels")
 module dev
 
 using Plots
-using AverageShiftedHistograms
 using Base.Test
 using HiddenMarkovModels
 using StateSpace
@@ -51,17 +50,55 @@ function toymodel()
 end
 
 
-# P(Y_t+1|X_t=x1)  (=> mk1 in rkhs filtering)
-mu1(model::LinearGaussianSSM,x1)=model.G*model.F*x1
-sigma1(model::LinearGaussianSSM,x1)=model.G*model.V*model.G'+model.W
-# P(X_t+1|X_t=x1,Y_{t+1}=y_2)  (=> mk2 in rkhs filtering)
-mu2(model::LinearGaussianSSM,x1,y2)=model.F*x1-model.V*model.G'*((model.G*model.V*model.G'+model.W)\(y2-model.G*model.F*x1))
-sigma2(model::LinearGaussianSSM,x1,y2)=model.V-model.V*model.G'*(model.G*model.V*model.G'+model.W)\model.G*model.V
+mu1(model::LinearGaussianSSM,x1)=model.F*x1
+mu2(model::LinearGaussianSSM,x2)=model.G*x2
 
 
-function translate2RKHS(model::LinearGaussianSSM,N=100,lambda=0.0)
+function markov(Hx,Hy,x,y,lambda=1.0)
+	@assert length(x)==length(y) 
+    N=length(x)
+	B1=[(x[i],y[i]) for i=1:N]
+	lB1=line(B1)
+	B2=vec([(x[i],y[j]) for i=1:N,j=1:N])
+	lB2=line(B2)
+	Gx=kernel(Hx,x,line(x))
+	Gy=kernel(Hy,y,line(y))
+	G12=kernel(RKHS2{Hx,Hy},B1,lB2)	
+	G2=kernel(RKHS2{Hx,Hy},B2,lB2)
+	weights=vec(Gx*((Gx+lambda*I)\((Gy+lambda*I)\Gy)))
+	println("here")
+	joint=reshape(project(weights,G2,G2),N,N)
+	println("here")
+	joint=joint./sum(joint,2)
+	RKHSMap(Hx,Hy,line(x),joint,y)
+end
+
+
+function markov2(Hx,Hy,x,y,lambda=1.0)
+	@assert length(x)==length(y) 
+    N=length(x)
+	Gx=kernel(Hx,x,line(x))	
+	Gy=kernel(Hy,y,line(y))	
+	joint=(Gx*Gx+lambda*I)\inv(Gy*Gy+lambda*I) 
+	mk=joint./sum(joint,2)
+	RKHSMap(Hx,Hy,line(x),mk,y)
+end
+
+function markov3(Hx,Hy,B1,Bx,By)
+	dx,dy,n=length(Bx),length(By),length(B1)
+	B2=vec([(x,y) for x=Bx,y=By])
+	lB2=line(B2)
+	G12=kernel(RKHS2{Hx,Hy},B1,lB2)	
+	G2=kernel(RKHS2{Hx,Hy},B2,lB2)
+	joint=reshape(project(fill(1.0/n,n),G12,G2),dx,dy)
+	mk=joint./sum(joint,2)
+	RKHSMap(Hx,Hy,line(Bx),mk,By)
+end
+
+function translate2RKHS(model::LinearGaussianSSM,n=100,lambda=0.0)
 	
-	xx1=1*randn(N)
+	N=1000
+	xx1=2*randn(N)
 	xx2=zeros(N)
 	yy2=zeros(N)
 	for i=1:N
@@ -71,36 +108,51 @@ function translate2RKHS(model::LinearGaussianSSM,N=100,lambda=0.0)
 
 	Hx=HG{1}
 	Hy=HG{2}
-	joint=RKHSMap(Hx,Hy,line(xx1),eye(N),yy2)
-	mk1=conditioningrule(joint,lambda=lambda)
-	mk2=conditioningrule(RKHSMap(RKHS2{Hx,Hy},Hx,[(xx1[j],yy2[j]) for i=1,j=1:N],eye(N),xx2),lambda=lambda)
+		
+	Bx=sort(2*randn(n))
+	By=sort(2*randn(n))
+
+	B1=[(xx1[i],xx2[i]) for i=1:N]
+	mk1=markov3(Hx,Hx,B1,Bx,Bx)
+	B2=[(xx2[i],yy2[i]) for i=1:N]
+	mk2=markov3(Hx,Hy,B2,Bx,By)
 
 	# plot(ash(xx1,nbin=round(Int,sqrt(N))))
 	# plot(ash(yy2,nbin=round(Int,sqrt(N))))
 	
-	mu1hat(x1)=round(moment(sumrule(Dirac(Hx,x1),mk1),1),4)
-	function mu2hat(x1,y2)
-		marginal=RKHSLeftElement(chainrule(Dirac(Hx,x1),Dirac(Hy,y2)))
-		round(moment(sumrule(marginal,mk2),1),4)
-	end
+	mu1hat(x1)=(proj([1.0],[x1],Bx)'*mk1.weights*Bx)[1]
+	mu2hat(x2)=(proj([1.0],[x2],Bx)'*mk2.weights*By)[1]
+	
 
 	# xx=linspace(-5,5,50)
 	# plot(xx,map(mu1hat,xx))
 	# plot!(xx,map(x->mu1(model,x)[1],xx))
 
-	# for y2=0.0
-	# 	plot(xx,map(x->mu2hat(x,y2),xx))
-	# 	title!("y2=$y2")
-	# 	plot!(xx,map(x->mu2(model,x,y2)[1],xx))
-	# end
+	# plot(xx,map(mu2hat,xx))
+	# title!("y2")
+	# plot!(xx,map(x->mu2(model,x)[1],xx))
 
 	# println(mu2(model,x10,y20)[1])
 	# println(mu2hat(x10,y20))
+	# writecsv("data/mk1.csv",mk1.weights)
+	# writecsv("data/mk2.csv",mk2.weights)
+	# writecsv("data/Bx.csv",Bx)
+	# writecsv("data/By.csv",By)
 
-	mk1,mk2,joint
+	mk1,mk2,Bx,By
 end
 
-function comparefilters(T=10,lambda2=1.0)
+
+@time mk1,mk2,Bx,By=translate2RKHS(toymodel(),15);
+
+
+# using ProfileView
+# Profile.clear()
+# @profile translate2RKHS(toymodel(),15);
+# ProfileView.view()
+
+
+function comparefilters(T=10,lambda2=0.0)
 	# lambda=1.
 	model=toymodel()	
 	datx,daty=rand(model,0.0,T)
@@ -113,9 +165,9 @@ function comparefilters(T=10,lambda2=1.0)
 	initial=MvNormal(zeros(1),ones(1,1))
 	fil=filter(model, daty',initial)
 
-	N=1000
+	N=50
 	lambda=1.0/sqrt(N)
-	mk1,mk2,joint=translate2RKHS(model,N,lambda)
+	# mk1,mk2=translate2RKHS(model,N,lambda)
 	ini=RKHSLeftElement(Hx,fill(1/N,1,N),vec(rand(fil.state[1],N)))
 
 	function mu2hat(x1,y2)
@@ -128,21 +180,26 @@ function comparefilters(T=10,lambda2=1.0)
 	# title!("y2=$y2")
 	# plot!(xx,map(x->mu2(model,x,y2)[1],xx))
 
+	mk1=readcsv("data/mk1.csv",)
+	mk2=readcsv("data/mk2.csv",)
+	Bx=vec(readcsv("data/Bx.csv"))
+	By=vec(readcsv("data/By.csv"))
 
-	filt=filtr2(mk1,mk2,ini,daty,lambda=lambda2)
+	mk1=RKHSMap(Hx,Hx,line(Bx),mk1,Bx)
+	mk2=RKHSMap(Hx,Hy,line(Bx),mk2,By)
+
+	filt=filtr4(mk1,mk2,ini,daty)
 	
 	true_filter=[fil.state[t].μ[1] for t=1:T]
-	approx_filter=[moment(filt[t],1) for t=1:T]
+	approx_filter=[dot(filt[:,t],Bx) for t=1:T]
 
 	plot(1:T,true_filter)
 	plot!(1:T,approx_filter)
 
-	println("true filtered mean: ",round(fil.state[T].μ[1],4))
-	println("approximate filtered mean: ",round(moment(filt[T],1),4))
-	fil,filt
+	fil,filt,Bx
 end
 
-fil,filt=comparefilters(2,0.1);
+# @time fil,filt,Bx=comparefilters(500);
 
 
 # using ProfileView
