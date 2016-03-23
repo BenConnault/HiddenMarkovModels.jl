@@ -29,22 +29,20 @@ include("hmm_fit.jl")
 
 #############################################
 # RKHS branch
-import Base.transpose
-import Distributions.moment
+
 using JuMP, Ipopt
-using NearestNeighbors
-import NearestNeighbors: Metric, evaluate, euclidean
+
+import Base.length
+
+line(x)=reshape(x,1,lengh(x))
 
 include("rkhs_types.jl")
-include("rkhs_spaces.jl")
-include("rkhs_calculus.jl")
-include("rkhs_filtering.jl")
-include("rkhs_filtering_strict.jl")
+include("rkhs_vptree.jl")
+# include("rkhs_filtering.jl")
 
-export line
-export RKHSLeftElement, RKHSRightElement, RKHSMap, RKHS2, marginal, marginals, transpose, compact, distance, Dirac, HD, HG, moment, kernel
-export sumrule, chainrule, conditioningrule, bayesrule
-export filtr, filtr2, filtr3, filtr4, filtersmoother, estep, project, proj, proj_nn, unpack, searchtree
+export GaussianRKHS, DiscreteRKHS, Point, RKHSVector, RKHSMap, KernelDistance
+export VPTree, knn
+export dimension,length
 
 #############################################
 
