@@ -101,7 +101,7 @@ function knn{T}(tree::VPTree{T}, x::T, k::Int)
 		end
 	
 	end
-	println(neighbors)
+	# println(neighbors)
 	neighbors[1:k]
 end
 

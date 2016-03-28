@@ -51,27 +51,6 @@ function filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSM
 end
 
 
-function filtersmoother{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{RKHS2{Hx,Hy},Hx},
-	transition::RKHSMap{Hx,RKHS2{Hx,Hy}},initial,data)
-	# `transition1` is P(Y_{t+1}|X_t) expressed in (Bx -> By)  
-	# `transition2` is P(X_{t+1}|X_t,Y_{t+1}) expressed in (Bxy) -> Bx 
-	# `transition` is P(X_t+1,Y_t+1|X_t) expressed in (Bx -> Bxy)
-	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
-	
-	Bxy=transition.rightbasis
-
-	@assert transition1.leftbasis == transition2.rightbasis
-	@assert transition1.leftbasis == transition.leftbasis
-	@assert transition2.leftbasis == Bxy
-
-	xytree = VPTree(bxy, KernelDistance())
-
-	filter=_filtr(transition1,transition2,xytree,initial,data)
-	smoother=_smoother(transition,filter,xytree,data)
-
-	filter,smoother
-end
-
 function _filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{RKHS2{Hx,Hy},Hx},
 	xbasis::Basis{Hx},xybasis::Basis{Tuple{Hx,Hy}},initial,data)
 	# `transition1` is P(Y_{t+1}|X_t) expressed in (Bx -> By)  
@@ -81,8 +60,8 @@ function _filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHS
 	Bx    = transition1.leftbasis
 	By    = transition1.rightbasis
 	Bxy   = transition2.leftbasis
-	Hx,Hy = Bx[1].space,By[1].space
-	dx,dy = dimension(Hx),length(Hy)
+	# Hx,Hy = Bx[1].space,By[1].space
+	dx,dy = dimension(Hx),dimension(Hy)
 	kx    = 2*dx        #number of neighbors to use
 	kxy   = 2*(dx+dy)  #number of neighbors to use
 
@@ -121,6 +100,28 @@ function _filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHS
 	end
 	filter
 end
+
+function filtersmoother{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{RKHS2{Hx,Hy},Hx},
+	transition::RKHSMap{Hx,RKHS2{Hx,Hy}},initial,data)
+	# `transition1` is P(Y_{t+1}|X_t) expressed in (Bx -> By)  
+	# `transition2` is P(X_{t+1}|X_t,Y_{t+1}) expressed in (Bxy) -> Bx 
+	# `transition` is P(X_t+1,Y_t+1|X_t) expressed in (Bx -> Bxy)
+	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
+	
+	Bxy=transition.rightbasis
+
+	@assert transition1.leftbasis == transition2.rightbasis
+	@assert transition1.leftbasis == transition.leftbasis
+	@assert transition2.leftbasis == Bxy
+
+	xytree = VPTree(bxy, KernelDistance())
+
+	filter=_filtr(transition1,transition2,xytree,initial,data)
+	smoother=_smoother(transition,filter,xytree,data)
+
+	filter,smoother
+end
+
 
 
 function _smoother{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,RKHS2{Hx,Hy}},filter,xytree,data)
