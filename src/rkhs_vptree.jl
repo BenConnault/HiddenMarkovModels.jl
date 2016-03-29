@@ -3,6 +3,7 @@
 # and not carry the distance in the VPTree object.
 # In the interest of generality and with a view towards plugging to Distances.jl, 
 # I don't follow this road.
+abstract Distance
 
 immutable VPTree{T, D <: Distance}
     data::Vector{T}  
@@ -57,7 +58,7 @@ function vp_node!(tree::VPTree,indices::AbstractVector{Int},parent::Int)
 	end
 end
 
-function VPTree(data,distance)
+function VPTree(data::Vector,distance::Distance)
 	n=length(data)
 	indices=collect(1:n)
 	root=rpop!(indices)
@@ -67,7 +68,7 @@ function VPTree(data,distance)
 end
 
 
-
+# returns the indices of the `k` nearest neighbors
 function knn{T}(tree::VPTree{T}, x::T, k::Int)
 	nodes_to_visit=[tree.root]
 	tau=Inf

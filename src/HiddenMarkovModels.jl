@@ -34,15 +34,19 @@ using JuMP, Ipopt
 
 import Base.length
 
-line(x)=reshape(x,1,lengh(x))
+# line(x)=reshape(x,1,lengh(x))
 
-include("rkhs_types.jl")
 include("rkhs_vptree.jl")
-# include("rkhs_filtering.jl")
+include("rkhs_tupletype.jl")
+include("rkhs_types.jl")
+include("rkhs_project.jl")
+include("rkhs_filtering.jl")
 
-export GaussianRKHS, DiscreteRKHS, Point, RKHSVector, RKHSMap, KernelDistance
-export VPTree, knn
+export instantiate
+export VPTree, knn, Distance, evaluate
+export RKHS, GaussianRKHS, DiscreteRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
 export dimension,length
+export project,filtr
 
 #############################################
 
