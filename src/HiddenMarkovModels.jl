@@ -1,46 +1,65 @@
 module HiddenMarkovModels
 
-importall DynamicDiscreteModels
-importall Distributions
-using StatsBase:sample,WeightVec,StatisticalModel
+import Base.rand
 import Base.norm
+import Base.length
+
+using StatsBase:sample,WeightVec,StatisticalModel
+import Distributions: wsample, Dirichlet
+using JuMP, Ipopt
 
 
-# When I get around to spinning of a Markov.jl
-# import Markov: rsm, nsm, z2q, q2z
-include("utils_stochasticmatrices.jl")
+######### Alex
+importall Distributions
 
-# Ben's exports
-export 	coef!, rand, loglikelihood, mle, dim, 
-		em, viterbi, filtr,
-		baumwelch, hmm, theta2ab
-
-#Alex's exports
 export	HMM, forward_backward, viterbi, smoothed_forward_backward, fit!
 
-
-#Ben's sources
-include("dhmm.jl")
-
-#Alex's sources
 include("hmm_types.jl")
 include("hmm_filtering.jl")
 include("hmm_fit.jl")
 
-#############################################
-# RKHS branch
+######## Ben
 
-using JuMP, Ipopt
+# rsm, nsm, z2q, q2z
+include("utils_stochasticmatrices.jl")
 
-import Base.length
+
+### "Dynamic Discrete Model" back-end
+
+	# Define a StatisticalModel interface and provide convenience functions such as numerical optimization of the likelihood based on Optim.jl.
+	# This is a good candidate for sending upstream to eg. StatsBase.
+	include("ddm/statisticalmodels-stopgap.jl")
+
+	include("ddm/dynamicdiscretemodel.jl")  # `abstract DynamicDiscreteModel <: StatisticalModel` interface
+	include("ddm/simulate.jl")              # `rand`
+	include("ddm/loglikelihood.jl")         # forward filtering + loglikelihood + jacobian
+	include("ddm/estep.jl")                 # e-step of the EM algorithm.
+	include("ddm/emalgorithm.jl")           # numerical optimiation for the M-step.
+	include("ddm/viterbi.jl")
+
+### "Discrete Hidden Markov Model": a thin layer on top of the "Dynamic Discrete Model" back-end
+
+	include("dhmm.jl")
+
+	export 	coef!, rand, loglikelihood, mle, dim, 
+		em, viterbi, filtr,
+		baumwelch, hmm, theta2ab
+
+
+### Experimental RKHS filtering
+
+	include("rkhs/vptree.jl")
+	include("rkhs/tupletype.jl")
+	include("rkhs/types.jl")
+	include("rkhs/project.jl")
+	include("rkhs/filtering.jl")
+
+
+
+
 
 # line(x)=reshape(x,1,lengh(x))
 
-include("rkhs_vptree.jl")
-include("rkhs_tupletype.jl")
-include("rkhs_types.jl")
-include("rkhs_project.jl")
-include("rkhs_filtering.jl")
 
 export instantiate
 export VPTree, knn, Distance, evaluate
@@ -48,7 +67,6 @@ export RKHS, GaussianRKHS, DiscreteRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelD
 export dimension,length
 export project,filtr
 
-#############################################
 
 
 end
