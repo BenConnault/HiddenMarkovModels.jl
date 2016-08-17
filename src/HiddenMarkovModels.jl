@@ -37,6 +37,7 @@ include("utils_stochasticmatrices.jl")
 	include("ddm/emalgorithm.jl")           # numerical optimiation for the M-step.
 	include("ddm/viterbi.jl")
 	include("ddm/filtering.jl")				#plain computation of the filter-smoother. Not used in loglikelihood or estep but sometimes useful.	
+	include("ddm/toymodel.jl")				#Useful for testing and examples.	
 
 ### "Discrete Hidden Markov Model": a thin layer on top of the "Dynamic Discrete Model" back-end
 

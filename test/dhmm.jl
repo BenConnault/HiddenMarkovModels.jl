@@ -26,3 +26,4 @@ abhat=em(model,data)
 
 @test vecnorm(abhat[1]-a)<5e-2
 @test vecnorm(abhat[2]-b)<5e-2
+
