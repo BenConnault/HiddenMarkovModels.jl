@@ -44,7 +44,7 @@ include("rkhs_filtering.jl")
 
 export instantiate
 export VPTree, knn, Distance, evaluate
-export RKHS, GaussianRKHS, DiscreteRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
+export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
 export dimension,length
 export project,filtr
 

@@ -115,7 +115,7 @@ end
 rkhs{T,D <: KernelDistance}(tree::VPTree{T,D})=rkhs(D)
 rkhs(D::KernelDistance)=D.rkhs
 
-#This is to compute d(delta_x,delta_yy) = d(x,y) by abuse of notation.
+#This is to compute d(delta_xx,delta_yy) = d(xx,yy) by abuse of notation.
 #Two cases: xx is a Point or xx is a Tuple{Vararg{Point}}
 #In both cases xx and yy must have the same type
 #I don't dispatch here on Union{Point,Tuple{Vararg{Point}}}, `kernel()` will make the proper checks downstream
