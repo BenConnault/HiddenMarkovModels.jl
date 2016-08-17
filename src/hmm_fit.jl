@@ -2,13 +2,13 @@
 # TODO: fit(D::Distribution, x::Vector{Float}, w::Vector{Float}) --> weighted maximum likelihood estimation...
 
 # Fitting function, add more methods here
-function fit!(hmm, o; method=:baum_welch, max_iter=100, tol=1e-5, scaling=true)
+function fit!(hmm::HMM, o; method=:baum_welch, max_iter=100, tol=1e-5, scaling=true)
 	if method == :baum_welch
 		return baum_welch!(hmm, o, max_iter, tol, scaling)
 	end
 end
 
-function baum_welch!(hmm, o, max_iter, tol, scaling)
+function baum_welch!(hmm::HMM, o, max_iter, tol, scaling)
 	# Fit hmm parameters given set of observation sequences
 	# Setting tol to NaN will prevent early stopping, resulting in 'max_iter' iterations
 	#n_seq = length(sequences)
@@ -35,7 +35,7 @@ function baum_welch!(hmm, o, max_iter, tol, scaling)
 	return ch
 end
 
-function re_estimate!(hmm,o,x,g)
+function re_estimate!(hmm::HMM,o,x,g)
 	# Update state transition matrix
     for i = 1:hmm.n
         denom = sum(g[1:end-1,i]) # Expected number of transitions from state 'i'
@@ -55,7 +55,7 @@ function re_estimate!(hmm,o,x,g)
 	hmm.p = vec(g[1,:])
 end
 
-function calc_stats(hmm,o,scaling)
+function calc_stats(hmm::HMM,o,scaling)
 	## Single E-M iteration in the Baum-Welch procedure
 	n_obs = length(o)
 
