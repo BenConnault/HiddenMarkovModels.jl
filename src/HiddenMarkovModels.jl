@@ -1,16 +1,15 @@
 module HiddenMarkovModels
 
-import Base.rand
-import Base.norm
-import Base.length
+importall Distributions, JuMP, Ipopt
 
-using StatsBase:sample,WeightVec,StatisticalModel
-import Distributions: wsample, Dirichlet
-using JuMP, Ipopt
+using StatsBase: sample,WeightVec,StatisticalModel
+
+
+import Base: rand, norm, length
+
 
 
 ######### Alex
-importall Distributions
 
 export	HMM, forward_backward, viterbi, smoothed_forward_backward, fit!
 
@@ -20,8 +19,11 @@ include("hmm_fit.jl")
 
 ######## Ben
 
-# rsm, nsm, z2q, q2z
-include("utils_stochasticmatrices.jl")
+export rsm
+include("utils/stochasticmatrices.jl")
+
+export ei, vecpq
+include("utils/tensors.jl")
 
 
 ### "Dynamic Discrete Model" back-end
@@ -56,19 +58,19 @@ include("utils_stochasticmatrices.jl")
 	include("rkhs/project.jl")
 	include("rkhs/filtering.jl")
 
+	export instantiate
+	export VPTree, knn, Distance, evaluate
+	export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
+	export dimension,length
+	export project,filtr
 
-
-
-
-# line(x)=reshape(x,1,lengh(x))
-
-
-export instantiate
-export VPTree, knn, Distance, evaluate
-export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
-export dimension,length
-export project,filtr
-
+	# line(x)=reshape(x,1,lengh(x))
 
 
 end
+
+
+
+### Discrete RKHS for playing around
+
+include("drkhs/DRKHS.jl")

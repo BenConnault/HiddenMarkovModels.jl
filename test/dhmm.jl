@@ -6,13 +6,13 @@ model=hmm((a,b))
 function naiveprob(data)
 	filter=transpose(model.mu[:,data[1]])
 	for t=2:length(data)
-		filter=sum(filter*slice(model.m,:,data[t-1],:,data[t]),1)
+		filter=sum(filter*view(model.m,:,data[t-1],:,data[t]),1)
 	end
 	sum(filter)
 end
 
 @test vec(sum(model.m,(3,4)))≈fill(1,6) 
-@test reshape(sum(model.m[:,1,:,:],4),2,2)≈a
+@test reshape(sum(view(model.m,:,1,:,:),3),2,2)≈a
 @test loglikelihood(model,data)≈log(naiveprob(data))/length(data)
 data=Array(Array,2)
 data[1]=[1,2,3]

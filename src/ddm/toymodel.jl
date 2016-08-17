@@ -63,8 +63,8 @@ function coef_jac!(model::ToyModel,eta)
 	a,b=eta2ab(eta)
 	fa(eta)=eta2ab(eta)[1]
 	fb(eta)=eta2ab(eta)[2]
-	ajac=reshape(ForwardDiff.jacobian(fa)(eta),2,2,2)
-	bjac=reshape(ForwardDiff.jacobian(fb)(eta),2,3,2)
+	ajac=reshape(ForwardDiff.jacobian(fa,eta),2,2,2)
+	bjac=reshape(ForwardDiff.jacobian(fb,eta),2,3,2)
 	hmm2ddm!(model::DynamicDiscreteModel,reshape(a,2,2),reshape(b,2,3),ajac,bjac)
 end
 

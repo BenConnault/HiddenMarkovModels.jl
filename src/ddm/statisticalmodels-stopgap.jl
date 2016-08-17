@@ -36,7 +36,7 @@ function mle_nojac(model::StatisticalModel,data,thetai::Array{Float64,1}=rand(di
 		llk
 	end
 	df=Optim.DifferentiableFunction(ff)	
-	ret = Optim.optimize(df, thetai,method=:cg,iterations=L)
+	ret = Optim.optimize(df, thetai,method=ConjugateGradient(),iterations=L)
 	println("  no jacobian, $(ret.iterations) iterations, $fcalls ff evaluations, final log-likelihood: $(round(-ret.f_minimum,4))")
 	ret.minimum
 end
@@ -60,7 +60,7 @@ function mle_jac(model::StatisticalModel,data,thetai::Array{Float64,1}=rand(dim(
 		-res[1]
 	end
 	df=Optim.DifferentiableFunction(ff,fj!,ffj!)
-	ret = Optim.optimize(df, thetai,method=:cg,iterations=L)
+	ret = Optim.optimize(df, thetai,method=ConjugateGradient(),iterations=L)
 	println("  with jacobian, $(ret.iterations) iterations, ($fcalls,$fjcalls,$ffjcalls) (ff,fj,ffj) evaluations, final log-likelihood: $(round(-ret.f_minimum,4))")
 	ret.minimum
 end

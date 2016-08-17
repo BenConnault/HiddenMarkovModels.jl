@@ -31,7 +31,7 @@ function project{H}(v::RKHSVector{H},basistree::RKHSBasisTree{H},k::Int=2*dimens
 	for i=1:length(v.basis)
 		inns = knn(tree, v.basis.points[i], k)    #indices of nearest neighbors
 		Gi=G2[inns,inns]
-		G12=vec(gramian(rkhs(H),slice(B2points,inns),[v.basis.points[i]]))   #watch out for type instability here
+		G12=vec(gramian(rkhs(H),view(B2points,inns),[v.basis.points[i]]))   #watch out for type instability here
 		w[inns]+=v.weights[i]*_project(Gi,G12)
 	end
 	w
@@ -51,11 +51,11 @@ end
 function _project(G1::Matrix{Float64},G12::Vector{Float64})
 	n=length(G12)
 	m = Model(solver=IpoptSolver(print_level=0))
-	@defVar(m, 0.0 <= w2[1:n] <= 1.0 )
+	@variable(m, 0.0 <= w2[1:n] <= 1.0 )
 	# @defVar(m, 0.0 <= w2[1:k]  )
-	@setObjective(m, Min,  (w2'*G1*w2)[1]-2*dot(G12,w2) )
-	@addConstraint(m, sum(w2) == 1 )
+	@objective(m, Min,  (w2'*G1*w2)[1]-2*dot(G12,w2) )
+	@constraint(m, sum(w2) == 1 )
 	status = solve(m)
-	getValue(w2)
+	getvalue(w2)
 end
 

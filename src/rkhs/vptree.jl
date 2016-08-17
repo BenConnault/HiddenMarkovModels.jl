@@ -45,14 +45,14 @@ function vp_node!(tree::VPTree,indices::AbstractVector{Int},parent::Int)
 		close_range=collect(1:split_index)
 		close_root_index=rpop!(close_range)
 		close_root=sorted_indices[close_root_index]
-		close=slice(sorted_indices,close_range)
+		close=view(sorted_indices,close_range)
 		tree.array[1,parent]=close_root
 		vp_node!(tree,close,close_root)
 		
 		far_range=collect(split_index+1:n)
 		far_root_index=rpop!(far_range)
 		far_root=sorted_indices[far_root_index]
-		far=slice(sorted_indices,far_range)
+		far=view(sorted_indices,far_range)
 		tree.array[2,parent]=far_root
 		vp_node!(tree,far,far_root)
 	end

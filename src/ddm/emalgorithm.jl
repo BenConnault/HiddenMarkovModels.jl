@@ -38,7 +38,7 @@ function em(model::DynamicDiscreteModel,data,thetai=rand(dim(model)),L=1000,tol=
 			end
 			-res
 		end
-		ret = Optim.optimize(ff, theta,method=:cg,iterations=L)
+		ret = Optim.optimize(ff, theta,method=ConjugateGradient(),iterations=L)
 		theta[:]=ret.minimum
 		coef!(model,theta)
 		llks[l]=loglikelihood(model,data)

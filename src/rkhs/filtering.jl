@@ -58,7 +58,7 @@ function _filtr{Hx<:RKHS,Hy<:RKHS,Hxy<:RKHS}(transition1::RKHSMap{Hx,Hy},transit
 
 		### MK1
 		# P(X_t,Y_t+1 | y_1:t)
-		joint=scale(filter[:,t],mk1)
+		joint=Diagonal(view(filter,:,t))*mk1
 
 		#posterior X_t | Y_{t+1},y_1:t (given as transposed stochastic matrix)
 		posterior_nucleus=joint./sum(joint,1)
