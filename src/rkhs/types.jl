@@ -109,11 +109,12 @@ end
 
 
 immutable KernelDistance{H <: RKHS} <: Distance
-	rkhs::H
+	# rkhs::H   # If RKHSs end up being objects
 end
 
 rkhs{T,D <: KernelDistance}(tree::VPTree{T,D})=rkhs(D)
-rkhs(D::KernelDistance)=D.rkhs
+# rkhs(D::KernelDistance)=D.rkhs   # If RKHSs end up being objects
+rkhs{H}(D::KernelDistance{H})=rkhs(H)
 
 #This is to compute d(delta_xx,delta_yy) = d(xx,yy) by abuse of notation.
 #Two cases: xx is a Point or xx is a Tuple{Vararg{Point}}

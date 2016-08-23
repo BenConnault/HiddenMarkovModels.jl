@@ -14,6 +14,20 @@ function drkhs(n,rho=.5)
     k
 end
 
+
+doc"""
+    rdrkhs(n)
+
+Return a random kernel function with 1 on the diagonal.
+"""
+function rdrkhs(n)
+    k=rand(n,n)
+    k=k*k'
+    s=diagm(1./(sqrt.(diag(k))))
+    s*k*s
+end
+
+
 # ip{f}{f'} in H is given by f*w*f', w=inv(k)
 # u=sqrtm(Symmetric(k))    #orthonormal basis in H, with u[i,j]= u_j(i)
 
@@ -153,6 +167,14 @@ expressed in `u1` and `u2` coordinates.
 qchannel(k1,u1,u2,q)=qdual(k1,u1,u2,q)'
 
 
+doc"""
+    jointq(k1,u1,u2,q)
+
+For a Markov transition matrix `Q` (in canonical coordinates), 
+return the "joint" operator which sends ``f_\mu`` in ``H_1`` to ``h_{Q \mu}`` in ``H_1 \otimes H_2``, 
+expressed in `u1` and `u2` coordinates.
+"""
+jointq(k1,u1,u2,q)=kron(eye(n1),qchannel(k1,u1,u2,q))*mult(k1,u1)'
 
 
 
