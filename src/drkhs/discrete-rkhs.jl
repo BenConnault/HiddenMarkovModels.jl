@@ -85,6 +85,16 @@ function mtf(k,u,f)
 end
 
 
+# `mtmu` to `mu` in canonical coordinates
+# function mtmu2mu(k,u,mtmu)
+    #this needs to be rewritten since I have "un-vec()ed" the definition of inclt
+#     n=size(k,1)
+#     jt=inclt(k,u)
+#     pjt=(jt'*jt)\jt'
+#     ufmu=pjt*vec(mtmu)   #ufmu is f_\mu expressed in u-coordinates
+#     [dot(ufmu,u*(k\ei(i,n))) for i=1:n]
+# end
+
 doc"""
     fmu(k,mu)
 
@@ -123,8 +133,8 @@ end
 doc"""
     incl(k,u)
 
-For a RKHS ``k``, return the operator ``f \to vec(M_f)`` in ``u`` coordinates.
-By definition `vec(mg(k,u,f))==incl(k,u)*u'*(k\f)`.
+For a RKHS ``k``, return the operator ``f \to M_f`` in ``u`` coordinates.
+By definition `mg(k,u,f)==incl(k,u)*kron(eye(n),u'*(k\f))`.
 """
 function incl(k,u)
     n=size(k,1)
@@ -132,14 +142,14 @@ function incl(k,u)
     for i=1:n
         j[:,i]=vec(mg(k,u,u[:,i]))
     end
-    j
+    reshape(permutedims(reshape(j,n,n,n),[1,3,2]),n,n^2)
 end
 
 doc"""
     inclt(k,u)
 
 For a RKHS ``k``, return the operator ``f \to vec( \tilde{M}_f)`` in ``u`` coordinates.
-By definition `vec(mtf(k,u,f))==incl(k,u)*u'*(k\f)`.
+By definition `mtf(k,u,f)==inclt(k,u)*kron(eye(n),u'*(k\f))`.
 """
 function inclt(k,u)
     n=size(k,1)
@@ -147,7 +157,7 @@ function inclt(k,u)
     for i=1:n
         j[:,i]=vec(mtf(k,u,u[:,i]))
     end
-    j
+    reshape(permutedims(reshape(j,n,n,n),[1,3,2]),n,n^2)
 end
 
 doc"""
@@ -174,7 +184,7 @@ For a Markov transition matrix `Q` (in canonical coordinates),
 return the "joint" operator which sends ``f_\mu`` in ``H_1`` to ``h_{Q \mu}`` in ``H_1 \otimes H_2``, 
 expressed in `u1` and `u2` coordinates.
 """
-jointq(k1,u1,u2,q)=kron(eye(n1),qchannel(k1,u1,u2,q))*mult(k1,u1)'
+jointq(k1,u1,u2,q)=kron(eye(size(k1,1)),qchannel(k1,u1,u2,q))*mult(k1,u1)'
 
 
 

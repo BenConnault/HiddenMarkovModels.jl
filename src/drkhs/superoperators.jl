@@ -22,16 +22,6 @@ function bsquare(k1,u1,k2,u2,q)
 end
 
 
-doc"""
-   stine(a,m)
-
-Compute ``A^* (I \otimes M) A``.
-"""
-function stine(aq,mg)
-    n1=size(aq,2)
-    n2=size(mg,1)
-    ctranspose(aq)*kron(eye(n1*n2),mg)*aq
-end
 
 
 
