@@ -1,15 +1,31 @@
-# In special cases such as this package, I could dispatch directly on:
-# distance{T}(x::T,y::T)
+##############
+# BC 08/2016
+# VP Tree
+##############
+
+
+
+# In some cases such as this package, I could dispatch directly on:
+# distance{T}(x1::T,x2::T)
 # and not carry the distance in the VPTree object.
 # In the interest of generality and with a view towards plugging to Distances.jl, 
-# I don't follow this road.
+# I use `evaluate(distance::D,x1::T,x2::T)` to computes `d(x1,x2)`.
 abstract Distance
 
+
+# A (binary) tree representation of a vector (`data`) of points of length `n`
+# is represented by a (2 x n) array (`array`) of indices such that
+# `array[1,i]` and `array[2,i]` are the indices of the left and right children nodes
+# of the node `i`.
+# Thus you go down the three from `data[i]` to `data[array[1,i]]` and `data[array[2,i]]` (cheap)
+# and up the tree from `data[i]` to `data[parent(i)]` where
+# `parent(i)=ind2sub((2,n),find(x -> x==i,array)[1])[2]`   (expensive)    
+
 immutable VPTree{T, D <: Distance}
-    data::Vector{T}  
-    distance::D      
-    root::Int
-    array::Matrix{Int}
+    data::Vector{T}             # the data is a vector of points::T
+    distance::D                 # `evaluate(distance::D,x1::T,x2::T)` computes `d(x1,x2)`
+    array::Matrix{Int}          # array representation of the tree 
+    root::Int                   # data[root] is the root of the tree
     radius::Vector{Float64}
 end
 
