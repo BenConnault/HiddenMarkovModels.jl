@@ -130,6 +130,9 @@ function mtmu(k,u,mu)
 end
 
 
+
+#NEED TO RECHANGE THIS BACK AND INTROUCTE J-HATS TOO
+
 doc"""
     incl(k,u)
 
@@ -159,6 +162,43 @@ function inclt(k,u)
     end
     reshape(permutedims(reshape(j,n,n,n),[1,3,2]),n,n^2)
 end
+
+
+# CODE FOR PROJECTING mg's to g's etc.
+
+# function m2mt(k,u)
+#     n=size(k,1)
+#     jt=inclt(k,u) # vec(mtf)=jt*uf  (n^2 x n)
+#     j=incl(k,u)
+#     invj=(j'*j)\j'
+#     rjt=reshape(permutedims(reshape(jt,n,n,n),[1,3,2]),n,n^2)
+#     a1m2mt=rjt*kron(eye(n),invj)
+#     a2m2mt=kron(eye(n),vec(eye(n)))
+#     a1m2mt,a2m2mt
+# end
+
+# function mt2m(k,u)
+#     n=size(k,1)
+#     j=incl(k,u)
+#     jt=inclt(k,u) # vec(mtf)=jt*uf  (n^2 x n)
+#     invjt=(jt'*jt)\jt'
+#     rj=reshape(permutedims(reshape(j,n,n,n),[1,3,2]),n,n^2)
+#     a1mt2m=rj*kron(eye(n),invjt)
+#     a2mt2m=kron(eye(n),vec(eye(n)))
+#     a1mt2m,a2mt2m
+# end
+
+# a1m2mt,a2m2mt=m2mt(k,u)
+# a1mt2m,a2mt2m=mt2m(k,u)
+
+# f=rand(n)
+# mff=mg(k,u,f)
+# mtff=mtf(k,u,f)
+# println(norm(mff-a1mt2m*kron(eye(n^2),mtff)*a2mt2m))
+# println(norm(mtff-a1m2mt*kron(eye(n^2),mff)*a2m2mt))
+
+
+
 
 doc"""
     qdual(k1,u1,u2,q)
