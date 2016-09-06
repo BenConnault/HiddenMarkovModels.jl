@@ -64,6 +64,12 @@ tol=1e-10
 @test norm(u2*qchannel(k1,u1,u2,q)*ufmu-fmu(k2,mu*q))   < tol     #test qchannel()  
 # @test norm(u2*qchannel(k1,u1,u2,q)*ufmu-fmu(k2,mu*q))   < tol     #test jointq()  
 
+# USE THAT FOR TESTS OF mt2f and ismtf
+# println("f ", fa)
+# println("f? ",mt2f(k1,u1,mtfa))
+# println("is? ",ismtf(k1,u1,mtfa))
+
+
 
 ac=quantum(k1,u1,k2,u2,q)
 # @test norm(ac'*kron(mtmu0,eye(n2))*ac-mtqmu)  < tol   #TOFIX

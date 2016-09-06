@@ -3,10 +3,11 @@ module DRKHS
 importall JuMP, SCS
 
 
-export drkhs, rdrkhs, mult, mg, mtf, fmu, mtmu, incl, inclt, qdual, qchannel, jointq
+export drkhs, rdrkhs, mult, mg, mtf, fmu, mtmu, incl, inclt, mt2f, ismtf,
+        qdual, qchannel, jointq
 include("discrete-rkhs.jl")
 
-export bsquare, quantum
+export bsquare, quantum, purification
 include("superoperators.jl")
 
 

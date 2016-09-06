@@ -131,7 +131,6 @@ end
 
 
 
-#NEED TO RECHANGE THIS BACK AND INTROUCTE J-HATS TOO
 
 doc"""
     incl(k,u)
@@ -148,6 +147,11 @@ function incl(k,u)
     reshape(permutedims(reshape(j,n,n,n),[1,3,2]),n,n^2)
 end
 
+
+#Note: 
+# - this is in fact m-tilde: ie `inclt(k,u)*kron(uf2,uf1)` is equal to ``\tilde{M}(f1,f2)``.
+# - this does not correspond to an operator in the infinite-dimensional setting.
+# - if you want to obtain the operator f \to \tilde{M}_f \in H_1 \otimes H_1, then this is just M'.
 doc"""
     inclt(k,u)
 
@@ -162,6 +166,21 @@ function inclt(k,u)
     end
     reshape(permutedims(reshape(j,n,n,n),[1,3,2]),n,n^2)
 end
+
+
+
+function mt2f(k,u,mtff)
+    m=mult(k,u)
+    uf=(m*m')\(m*vec(mtff))
+    u*uf
+end
+
+function ismtf(k,u,mtff,tol=1e-10)
+    f=mt2f(k,u,mtff)
+    norm(mtff-mtf(k,u,f)) < tol
+end
+
+
 
 
 # CODE FOR PROJECTING mg's to g's etc.

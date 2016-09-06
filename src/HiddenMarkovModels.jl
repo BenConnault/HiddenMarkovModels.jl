@@ -22,7 +22,7 @@ include("hmm_fit.jl")
 export rsm
 include("utils/stochasticmatrices.jl")
 
-export ei, vecpq
+export ei, vecpq, opnorm
 include("utils/tensors.jl")
 
 
