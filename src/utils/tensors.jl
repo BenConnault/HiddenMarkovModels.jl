@@ -68,6 +68,8 @@ vecpq(a::Matrix)=vecpq(Int(sqrt(size(a,1))),Int(sqrt(size(a,2))),a)
 
 
 doc"""
+    odec(x)
+
 For a symmetric matrix X, compute the decomposition ``X=P_1-P_2``
 where ``P_1`` and ``P_2`` are psd and ``P_1 P_2=0``. 
 """
@@ -80,13 +82,13 @@ function odec(s)
     mneg,mpos
 end
 
+doc"""
+    opnorm(m,p=Inf)
 
-opnormo(m,::Type{Val{1}})=sum(sqrt.(max(eigvals(m'*m),0)))
-opnormo(m,::Type{Val{2}})=norm(vec(m))
-opnormo(m,::Type{Val{0}})=sqrt(eigmax(m'*m))
-opnormo(m,p=0)=opnormo(m,Val{p})
+Compute the `p`-Schatten operator norm of `m` via the `p`-norm of its singular values.
+"""
+opnorm(m,p=Inf)=norm(svdvals(m),p)
 
-opnorm(m,p=Inf)=norm(sqrt.(svdvals(m'*m)),p)
 
 #FOR TESTS
 # opnorm1(m)=trace(sqrtm(m'*m))
@@ -101,3 +103,41 @@ opnorm(m,p=Inf)=norm(sqrt.(svdvals(m'*m)),p)
 #     println("0 ", opnorm(mm))
 #     println("0 ", norm(mm))
 # end
+
+
+
+
+doc"""
+    partialtrace(m,n1,n2,r)
+
+Compute the partial trace of ``M \in B(H_1 \otimes H_2)`` on ``H_r``.
+For example `partialtrace(kron(eye(n),B),n,size(B,1),1)` will return `n*B` 
+(summing over the diagonal blocks.)
+"""
+function partialtrace(m,n1,n2,r)
+    m=reshape(m,n2,n1,n2,n1)
+    r==2 && return sum(m[i2,:,i2,:] for i2=1:n2)
+    r==1 && return sum(m[:,i1,:,i1] for i1=1:n1)
+end
+
+doc"""
+    partialtrace(m,r)
+
+`partialtrace(m,n1,n2,r)` when `n1=n2`.
+"""
+function partialtrace(m,r)
+    n=Int(sqrt(size(m,1)))
+    partialtrace(m,n,n,r)
+end
+
+
+doc"""
+    rortho(n)
+
+Return a random orthogonal matrix. Use a naive method rather than the Haar measure.
+"""
+function rortho(n)
+    x=randn(n,n)
+    xx=x'x
+    sqrtm(xx)\x'
+end

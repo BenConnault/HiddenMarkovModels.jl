@@ -1,7 +1,7 @@
 doc"""
     purification(mtff)
 
-Canonical purification of a density operator.
+Canonical purification of the density operator `mtff` on ``H``: a pure state on ``H \otimes H`` whose partial trace is `mtff`. 
 """
 function purification(mtff)
     v,p=eig(mtff)
@@ -13,7 +13,7 @@ function purification(mtff)
 end
 
 
-
+#NOT EXPORTED
 doc"""
    bsquare(k1,u1,k2,u2,q)
 
@@ -72,7 +72,7 @@ doc"""
 
 Given a transition matrix `q`, return a Stinespring matrices `ac` compatible with
 the quantum channel (superoperator) induced by `q`, meaning
-``\tilde{M}_{\mu Q}`` can be computed as `ac'*kron(eye(n12),mtmu)*ac`.
+``\tilde{M}_{\mu Q}`` can be computed as `ac'*kron(mtmu,eye(n2))*ac`.
 This implies that the superoperator is completely positive.
 """
 quantum(k1,u1,k2,u2,q)=real(sqrtm(bsquare(k1,u1,k2,u2,q)))
