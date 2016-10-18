@@ -35,6 +35,7 @@ end
 # The "inner" index (which moves more frequently) is j on v_j. This is the opposite of vec(m[i,j]).
 
 
+
 #Here u*m*kron(u'*w*g1,u'*w*g2)=g1.*g2
 # and m*kron(u'*w*g,[1,0,0,0]) = mg*[1,0,0,0]
 doc"""
@@ -46,15 +47,24 @@ By definition `u*m*kron(u'*w*g1,u'*w*g2)==g1.*g2`.
 """
 function mult(k,u)
     n=size(k,1)
-    m=zeros(n,n,n)
-    for i=1:n
-        for j=1:n
-            m[:,j,i]=u'*(k\(u[:,i].*u[:,j]))
-        end
-    end
-    reshape(m,n,n^2)
+    jj=mult(n)
+    u\(jj*kron(u,u))
 end
 
+doc"""
+    mult(n)
+
+Return the multiplication operator, say `jj`, in the canonical discrete RKHS (K=I). 
+`jj` acts as a diagonal extraction matrix: `jj*vec(a)==diag(a)`. 
+Also: `jj*kron(a,b)*jj' == a.*b`.
+"""
+function mult(n)
+    jj=spzeros(n,n^2)
+    for i=1:n
+        jj[i,(i-1)*n+i]=1.0
+    end
+    jj
+end
 
 
 #Here cmg*u[:,1]=g.*u[:,1]=u2*mg*[1,0,0,0]
