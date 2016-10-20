@@ -1,9 +1,81 @@
+abstract FilteringAlgorithm
+
+immutable Strict  <: FilteringAlgorithm end
+immutable General <: FilteringAlgorithm end
+immutable Alt     <: FilteringAlgorithm end
 
 
 # Morally I would like the following signature:
 # function filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Tuple{Hx,Hy},Hx},initial,data)
 # BUT with my current implementation of RKHS as nested tuples of limited depth,
 # If Hx and Hy are RKHS, Tuple{Hx,Hy} cannot be a nested tuple of the same maximum depth
+
+function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},initial,data,filteringalgo::Strict)
+	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
+	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
+	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
+	
+	Bx  = emission.leftbasis
+	By  = emission.rightbasis
+
+	@assert Bx==transition.rightbasis
+	@assert Bx==transition.leftbasis
+
+	xbasistree  = RKHSBasisTree(Bx)
+	ybasistree  = RKHSBasisTree(By)
+
+	filter=_filtr(transition,emission,xbasistree,ybasistree,initial,data,filteringalgo)
+
+	filter
+end
+
+#direct acces to core algorithm if you already have the trees
+function _filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},
+	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial,data,filteringalgo::Strict)
+	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
+	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
+	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
+
+	Bx  = emission.leftbasis
+	By  = emission.rightbasis
+
+	@assert Bx==transition.rightbasis
+	@assert Bx==transition.leftbasis
+	@assert Bx.points == xbasistree.tree.data
+	@assert By.points == ybasistree.tree.data
+	
+	dx,dy = dimension(rkhs(xbasistree)),dimension(rkhs(ybasistree))
+	kx    = 2*dx        #number of neighbors to use
+	ky    = 2*dy        #number of neighbors to use
+
+	T=length(data)
+	filter=Array(Float64,length(Bx),T)
+	filter[:,1]=project(initial,xbasistree,kx::Int)
+
+	mkt = transition.weights   #P(X_{t+1}|X_t)
+	mke = emission.weights
+	
+	for t=1:T-1
+
+		### MK1
+		# p(X_{t+1}| y_1:t) =  p(X_t | y_1:t) [T] mkt  
+		pred=At_mul_B(mkt,view(filter,:,t))
+
+		# p(X_{t+1}, Y_{t+1} | y_1:t) = p(X_{t+1}| y_1:t) [J] mke 
+		joint=Diagonal(pred)*mke
+
+		# p(X_{t+1}  | Y_{t+1}, y_1:t) (given as transposed stochastic matrix) 
+		posterior_kernel=joint./sum(joint,1)
+
+		# p(X_{t+1}  | y_{t+1}, y_1:t) = delta_{y_t+1} [T] p(X_{t+1}  | Y_{t+1}, y_1:t)
+		delta_y=RKHSVector([1.0],RKHSBasis(rkhs(Hy),[data[t+1]]))
+		wdelta_y_in_By=project(delta_y,ybasistree,ky)
+		filter[:,t+1]=posterior_kernel*wdelta_y_in_By  
+
+	end
+	filter
+end
+
 
 
 function filtr{Hx<:RKHS,Hy<:RKHS,Hxy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Hxy,Hx},initial,data)

@@ -72,15 +72,16 @@ RKHSMap{H1,H2,T1,T2}(leftbasis::RKHSBasis{H1,T1},weights,rightbasis::RKHSBasis{H
 function gramian(H::RKHS,x::AbstractVector,y::AbstractVector)
 	lx=length(x)
 	ly=length(y)
-	res=zeros(lx,ly)
-	for jy=1:ly
-		for ix=1:lx
-			# @code_warntype(kernel(H,x[ix],y[jy]))
-			# error()
-			res[ix,jy]=kernel(H,x[ix],y[jy])
-		end
-	end
-	res
+	[kernel(H,x[ix],y[jy]) for ix=1:lx,jy=1:ly]
+	# res=zeros(lx,ly)
+	# for jy=1:ly
+	# 	for ix=1:lx
+	# 		# @code_warntype(kernel(H,x[ix],y[jy]))
+	# 		# error()
+	# 		res[ix,jy]=kernel(H,x[ix],y[jy])
+	# 	end
+	# end
+	# res
 end
 
 function gramian{H}(basis1::RKHSBasis{H},basis2::RKHSBasis{H})
@@ -109,7 +110,9 @@ end
 
 
 immutable KernelDistance{H <: RKHS} <: Distance
-	# rkhs::H   # If RKHSs end up being objects
+	# If RKHSs end up being objects, I will need the rkhs field.
+	# I could get rid of it now, except that my test/example code uses it.
+	rkhs::H   
 end
 
 rkhs{T,D <: KernelDistance}(tree::VPTree{T,D})=rkhs(D)
@@ -120,7 +123,22 @@ rkhs{H}(D::KernelDistance{H})=rkhs(H)
 #Two cases: xx is a Point or xx is a Tuple{Vararg{Point}}
 #In both cases xx and yy must have the same type
 #I don't dispatch here on Union{Point,Tuple{Vararg{Point}}}, `kernel()` will make the proper checks downstream
-evaluate(dk::KernelDistance,x,y)=sqrt(kernel(rkhs(dk),x,x)+kernel(rkhs(dk),y,y)-kernel(rkhs(dk),x,y))
+evaluate(dk::KernelDistance,x,y)=sqrt(kernel(rkhs(dk),x,x)+kernel(rkhs(dk),y,y)-2*kernel(rkhs(dk),x,y))
+
+
+
+immutable KernelDistanceWithGramian{H <: RKHS} <: Distance
+	# If RKHSs end up being objects, I will need the rkhs field.
+	# I could get rid of it now, except that my test/example code uses it.
+	gram::Matrix{Float64}
+	rkhs::H   
+end
+
+rkhs{T,D <: KernelDistanceWithGramian}(tree::VPTree{T,D})=rkhs(D)
+# rkhs(D::KernelDistance)=D.rkhs   # If RKHSs end up being objects
+rkhs{H}(D::KernelDistanceWithGramian{H})=rkhs(H)
+
+evaluate(dk::KernelDistanceWithGramian,i,j)=sqrt(dk.gram[i,i]+dk.gram[j,j]-2*dk.gram[i,j])
 
 
 
@@ -130,8 +148,8 @@ immutable RKHSBasisTree{H <: RKHS, T,D <: KernelDistance}
 end
 
 function RKHSBasisTree{H,T}(basis::RKHSBasis{H,T})
-	tree=VPTree(basis.points, KernelDistance(rkhs(basis)))
-	gram=gramian(basis,basis)
+	gram=gramian(basis,basis)    #this does not make much sense because VPTress repeatedly computes distance already.
+	tree=VPTree(basis.points, KernelDistanceWithGramian(rkhs(basis),gram))
 	RKHSBasisTree{H,T,KernelDistance{H}}(tree,gram)
 end
 
@@ -164,5 +182,30 @@ immutable DiscreteRKHS{Label} <: AtomicRKHS end
 dimension(H::DiscreteRKHS)=1
 
 kernel(H::DiscreteRKHS,x::Int,y::Int)=(1.0*(x==y))
+
+
+immutable LaplaceRKHS{Label} <: AtomicRKHS
+	# dimension::Int
+	# precision::Float64
+end
+
+dimension(H::LaplaceRKHS)=1
+
+kernel(H::LaplaceRKHS,x::Float64,y::Float64)=exp(-abs(x-y))
+
+
+
+immutable GuilbartRKHS{H <: RKHS,Label} <: AtomicRKHS
+	# ground::H
+end
+
+
+function kernel{subH}(H::GuilbartRKHS{subH},x::RKHSVector{subH},y::RKHSVector{subH})
+	#can have speed gain here by using symmetry
+	basispoints=vcat(x.basis.points,y.basis.points)
+	weights=vcat(x.weights,-y.weights)
+	gram=gramian(rkhs(subH),basispoints,basispoints)
+	exp(-sqrt(abs(dot(weights,gram*weights))))
+end
 
 

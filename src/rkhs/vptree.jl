@@ -78,7 +78,7 @@ function VPTree(data::Vector,distance::Distance)
 	n=length(data)
 	indices=collect(1:n)
 	root=rpop!(indices)
-	tree=VPTree(data,distance,root,zeros(Int,2,n),zeros(n))
+	tree=VPTree(data,distance,zeros(Int,2,n),root,zeros(n))
 	vp_node!(tree,indices,root)
 	tree
 end

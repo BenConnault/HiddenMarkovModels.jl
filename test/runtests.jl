@@ -15,9 +15,9 @@ include("utils.jl")
 # Discrete HMMs
 # include("dhmm.jl")
 
-# include("rkhs_tupletype.jl")
-# include("rkhs_vptree.jl")
-# include("rkhs_types.jl")
-# include("rkhs_filtering.jl")
+include("rkhs_tupletype.jl")
+include("rkhs_vptree.jl")
+include("rkhs_types.jl")
+include("rkhs_filtering.jl")
 
-include("drkhs.jl")
+# include("drkhs.jl")

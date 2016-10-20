@@ -141,3 +141,19 @@ function rortho(n)
     xx=x'x
     sqrtm(xx)\x'
 end
+
+
+
+doc"""
+    opdensity(m2,m1)
+
+Find a positive T such that ``T M_1 T = M_2`` (Pedersen-Takesaki aka. noncommutative Radon-Nikodym derivative dM2/dM1). 
+Use an explicit formula valid when ``M_1`` is invertible.
+"""
+function opdensity(m2,m1)
+    sm1=real(sqrtm(m1))
+    ism1=inv(sm1)
+    ism1*real(sqrtm(sm1*m2*sm1))*ism1
+end
+
+
