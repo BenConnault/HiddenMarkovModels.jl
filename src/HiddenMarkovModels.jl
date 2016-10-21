@@ -62,7 +62,7 @@ include("utils/tensors.jl")
 	export VPTree, knn, Distance, evaluate
 	export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, LaplaceRKHS, GuilbartRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
 	export dimension,length
-	export FilteringAlgorithm, Strict, General, Alt, project,filtr
+	export FilteringAlgorithm, Strict, General, Alt, project, filtr, filtr_smoothr 
 
 	# line(x)=reshape(x,1,lengh(x))
 

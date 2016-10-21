@@ -16,6 +16,8 @@ data=b3.points
 tree1=VPTree(data,KernelDistance(H3))
 
 tree2=RKHSBasisTree(b3)
+gram=gramian(b3,b3)
+tree3=RKHSBasisTree(b3,gram)
 
 
 v3=RKHSVector(rand(10),b3)

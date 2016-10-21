@@ -5,10 +5,9 @@ immutable General <: FilteringAlgorithm end
 immutable Alt     <: FilteringAlgorithm end
 
 
-# Morally I would like the following signature:
-# function filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Tuple{Hx,Hy},Hx},initial,data)
-# BUT with my current implementation of RKHS as nested tuples of limited depth,
-# If Hx and Hy are RKHS, Tuple{Hx,Hy} cannot be a nested tuple of the same maximum depth
+################################################################################################
+### STRICT HIDDEN MARKOV DYNAMICS
+################################################################################################
 
 function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},initial,data,filteringalgo::Strict)
 	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
@@ -24,14 +23,22 @@ function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{H
 	xbasistree  = RKHSBasisTree(Bx)
 	ybasistree  = RKHSBasisTree(By)
 
-	filter=_filtr(transition,emission,xbasistree,ybasistree,initial,data,filteringalgo)
+	filter=filtr(transition,emission,xbasistree,ybasistree,initial,data,filteringalgo)
 
 	filter
 end
 
 #direct acces to core algorithm if you already have the trees
-function _filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},
-	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial,data,filteringalgo::Strict)
+function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},
+	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial::RKHSVector,data,filteringalgo::Strict)
+	kx=2*dimension(rkhs(xbasistree))
+	project(initial,xbasistree,kx)
+	_filtr(transition,emission,xbasistree,ybasistree,ini,data,filteringalgo)
+end
+
+#direct acces to core algorithm if you already have the trees and initial distribution expressed in Bx
+function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},
+	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial::Vector{Float64},data,filteringalgo::Strict)
 	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
 	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
 	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
@@ -50,7 +57,7 @@ function _filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{
 
 	T=length(data)
 	filter=Array(Float64,length(Bx),T)
-	filter[:,1]=project(initial,xbasistree,kx::Int)
+	filter[:,1]=initial
 
 	mkt = transition.weights   #P(X_{t+1}|X_t)
 	mke = emission.weights
@@ -76,7 +83,75 @@ function _filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{
 	filter
 end
 
+function filtr_smoothr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},
+	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial::Vector{Float64},data,filteringalgo::Strict)
+	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
+	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
+	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
 
+	Bx  = emission.leftbasis
+	By  = emission.rightbasis
+
+	@assert Bx==transition.rightbasis
+	@assert Bx==transition.leftbasis
+	@assert Bx.points == xbasistree.tree.data
+	@assert By.points == ybasistree.tree.data
+	
+	dx,dy = dimension(rkhs(xbasistree)),dimension(rkhs(ybasistree))
+	kx    = 2*dx        #number of neighbors to use
+	ky    = 2*dy        #number of neighbors to use
+
+	T=length(data)
+	filter=Array(Float64,length(Bx),T)
+	filter[:,1]=initial
+	smoother=similar(filter)
+	backward=Array(Float64,length(Bx),length(Bx),T)
+
+	mkt = transition.weights   #P(X_{t+1}|X_t)
+	mke = emission.weights
+	
+	for t=1:T-1
+
+		# p(X_t,X_{t+1}| y_1:t) =  p(X_t | y_1:t) [J] mkt  
+		joint1=diagm(view(filter,:,t))*mkt
+
+		# p(X_{t+1}| y_1:t)
+		pred=vec(sum(joint1,1))
+
+		# p(X_t|X_{t+1}, y_1:t) 
+		backward[:,:,t]=joint1./sum(joint1,1) #transposed stochastic matrix
+
+		# p(X_{t+1}, Y_{t+1} | y_1:t) = p(X_{t+1}| y_1:t) [J] mke 
+		joint2=Diagonal(pred)*mke
+
+		# p(X_{t+1}  | Y_{t+1}, y_1:t) (given as transposed stochastic matrix) 
+		posterior_kernel=joint2./sum(joint2,1)
+
+		# p(X_{t+1}  | y_{t+1}, y_1:t) = delta_{y_t+1} [T] p(X_{t+1}  | Y_{t+1}, y_1:t)
+		delta_y=RKHSVector([1.0],RKHSBasis(rkhs(Hy),[data[t+1]]))
+		wdelta_y_in_By=project(delta_y,ybasistree,ky)
+		filter[:,t+1]=posterior_kernel*wdelta_y_in_By  
+	end
+
+	smoother[:,T]=filter[:,T]
+	for t=T-1:-1:1
+		smoother[:,t]=view(backward,:,:,t)*smoother[:,t+1]
+	end
+
+	filter,smoother
+end
+
+
+
+
+################################################################################################
+### GENERAL HIDDEN MARKOV DYNAMICS
+################################################################################################
+
+# Morally I would like the following signature:
+# function filtr{Hx<:RKHS,Hy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Tuple{Hx,Hy},Hx},initial,data)
+# BUT with my current implementation of RKHS as nested tuples of limited depth,
+# If Hx and Hy are RKHS, Tuple{Hx,Hy} cannot be a nested tuple of the same maximum depth
 
 function filtr{Hx<:RKHS,Hy<:RKHS,Hxy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Hxy,Hx},initial,data)
 	# `transition1` is P(Y_{t+1}|X_t) expressed in (Bx -> By)  
@@ -95,13 +170,13 @@ function filtr{Hx<:RKHS,Hy<:RKHS,Hxy<:RKHS}(transition1::RKHSMap{Hx,Hy},transiti
 	ybasistree  = RKHSBasisTree(By)
 	xybasistree = RKHSBasisTree(Bxy)
 
-	filter=_filtr(transition1,transition2,xbasistree,ybasistree,xybasistree,initial,data)
+	filter=filtr(transition1,transition2,xbasistree,ybasistree,xybasistree,initial,data)
 
 	filter
 end
 
 
-function _filtr{Hx<:RKHS,Hy<:RKHS,Hxy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Hxy,Hx},
+function filtr{Hx<:RKHS,Hy<:RKHS,Hxy<:RKHS}(transition1::RKHSMap{Hx,Hy},transition2::RKHSMap{Hxy,Hx},
 	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},xybasistree::RKHSBasisTree{Hxy},initial,data)
 	# `transition1` is P(Y_{t+1}|X_t) expressed in (Bx -> By)  
 	# `transition2` is P(X_{t+1}|X_t,Y_{t+1}) expressed in (Bxy) -> Bx 

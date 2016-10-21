@@ -12,6 +12,10 @@
 # I use `evaluate(distance::D,x1::T,x2::T)` to computes `d(x1,x2)`.
 abstract Distance
 
+#interface
+function evaluate(distance::Distance,x,y)
+	println("must implement evaluate()")
+end
 
 # A (binary) tree representation of a vector (`data`) of points of length `n`
 # is represented by a (2 x n) array (`array`) of indices such that
@@ -33,6 +37,16 @@ end
 rpop!(v)=splice!(v,rand(1:length(v)))
 
 splice_or_insert!(v,r,x)=isempty(r)?splice!(v,r,x):insert!(v,r.start,x)
+
+
+function VPTree(data::Vector,distance::Distance)
+	n=length(data)
+	indices=collect(1:n)
+	root=rpop!(indices)
+	tree=VPTree(data,distance,zeros(Int,2,n),root,zeros(n))
+	vp_node!(tree,indices,root)
+	tree
+end
 
 function vp_node!(tree::VPTree,indices::AbstractVector{Int},parent::Int)
 	n=length(indices)
@@ -74,14 +88,59 @@ function vp_node!(tree::VPTree,indices::AbstractVector{Int},parent::Int)
 	end
 end
 
-function VPTree(data::Vector,distance::Distance)
+#For those cases where a table of distances has been precomputed
+function VPTree(data::Vector,distance::Distance,distance_table::Matrix{Float64})
 	n=length(data)
 	indices=collect(1:n)
 	root=rpop!(indices)
 	tree=VPTree(data,distance,zeros(Int,2,n),root,zeros(n))
-	vp_node!(tree,indices,root)
+	vp_node!(tree,indices,root,distance_table)
 	tree
 end
+
+function vp_node!(tree::VPTree,indices::AbstractVector{Int},parent::Int,distance_table::Matrix{Float64})
+	n=length(indices)
+	if n==1
+		tree.array[1,parent]=indices[1]
+		tree.radius[parent]=1.01*distance_table[parent,indices[1]]
+	elseif n==2
+		tree.array[1,parent]=indices[1]
+		tree.array[2,parent]=indices[2]
+		dist1=distance_table[parent,indices[1]]
+		dist2=distance_table[parent,indices[2]]
+		tree.radius[parent]=(dist1+dist2)/2
+	elseif n>2 
+		sorted_distances=Float64[]
+		sorted_indices=Int[]
+		for i=indices
+			d_i=distance_table[parent,i]
+			r_i=searchsorted(sorted_distances,d_i)
+			splice_or_insert!(sorted_distances,r_i,d_i)
+			splice_or_insert!(sorted_indices,r_i,i)
+		end
+		split_index=div(n,2)
+		
+		tree.radius[parent]=mean(sorted_distances[split_index:split_index+1])
+
+		close_range=collect(1:split_index)
+		close_root_index=rpop!(close_range)
+		close_root=sorted_indices[close_root_index]
+		close=view(sorted_indices,close_range)
+		tree.array[1,parent]=close_root
+		vp_node!(tree,close,close_root,distance_table)
+		
+		far_range=collect(split_index+1:n)
+		far_root_index=rpop!(far_range)
+		far_root=sorted_indices[far_root_index]
+		far=view(sorted_indices,far_range)
+		tree.array[2,parent]=far_root
+		vp_node!(tree,far,far_root,distance_table)
+	end
+end
+
+
+
+
 
 
 # returns the indices of the `k` nearest neighbors

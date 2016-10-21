@@ -127,31 +127,38 @@ evaluate(dk::KernelDistance,x,y)=sqrt(kernel(rkhs(dk),x,x)+kernel(rkhs(dk),y,y)-
 
 
 
-immutable KernelDistanceWithGramian{H <: RKHS} <: Distance
-	# If RKHSs end up being objects, I will need the rkhs field.
-	# I could get rid of it now, except that my test/example code uses it.
-	gram::Matrix{Float64}
-	rkhs::H   
-end
+# immutable KernelDistanceWithGramian{H <: RKHS} <: Distance
+# 	# If RKHSs end up being objects, I will need the rkhs field.
+# 	# I could get rid of it now, except that my test/example code uses it.
+# 	gram::Matrix{Float64}
+# 	rkhs::H   
+# end
 
-rkhs{T,D <: KernelDistanceWithGramian}(tree::VPTree{T,D})=rkhs(D)
-# rkhs(D::KernelDistance)=D.rkhs   # If RKHSs end up being objects
-rkhs{H}(D::KernelDistanceWithGramian{H})=rkhs(H)
+# rkhs{T,D <: KernelDistanceWithGramian}(tree::VPTree{T,D})=rkhs(D)
+# # rkhs(D::KernelDistance)=D.rkhs   # If RKHSs end up being objects
+# rkhs{H}(D::KernelDistanceWithGramian{H})=rkhs(H)
 
-evaluate(dk::KernelDistanceWithGramian,i,j)=sqrt(dk.gram[i,i]+dk.gram[j,j]-2*dk.gram[i,j])
-
-
+# evaluate(dk::KernelDistanceWithGramian,i,j)=sqrt(dk.gram[i,i]+dk.gram[j,j]-2*dk.gram[i,j])
 
 immutable RKHSBasisTree{H <: RKHS, T,D <: KernelDistance} 
 	tree::VPTree{T,D}
 	gram::Matrix{Float64}
 end
 
-function RKHSBasisTree{H,T}(basis::RKHSBasis{H,T})
-	gram=gramian(basis,basis)    #this does not make much sense because VPTress repeatedly computes distance already.
-	tree=VPTree(basis.points, KernelDistanceWithGramian(rkhs(basis),gram))
-	RKHSBasisTree{H,T,KernelDistance{H}}(tree,gram)
+#is there a simpler expression?
+function gramian2distances(gramian)
+	n=size(gramian,1)
+	[sqrt(gramian[i,i]+gramian[j,j]-2*gramian[i,j]) for i=1:n,j=1:n]
 end
+
+function RKHSBasisTree{H,T}(basis::RKHSBasis{H,T},gramian::Matrix{Float64})
+	distance_table=gramian2distances(gramian)
+	tree=VPTree(basis.points, KernelDistance(rkhs(basis)),distance_table)
+	RKHSBasisTree{H,T,KernelDistance{H}}(tree,gramian)
+end
+
+RKHSBasisTree{H,T}(basis::RKHSBasis{H,T})=RKHSBasisTree(basis,gramian(basis,basis))
+
 
 rkhs{H}(basistree::RKHSBasisTree{H})=rkhs(H)
 
@@ -199,6 +206,7 @@ immutable GuilbartRKHS{H <: RKHS,Label} <: AtomicRKHS
 	# ground::H
 end
 
+dimension(H::GuilbartRKHS)=5  #this is a hack: dimension is mostly used to choose 2*dim nearest neighbours 
 
 function kernel{subH}(H::GuilbartRKHS{subH},x::RKHSVector{subH},y::RKHSVector{subH})
 	#can have speed gain here by using symmetry
