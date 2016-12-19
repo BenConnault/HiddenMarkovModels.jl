@@ -160,6 +160,7 @@ end
 
 #Note: 
 # - this is in fact m-tilde: ie `inclt(k,u)*kron(uf2,uf1)` is equal to ``\tilde{M}(f1,f2)``.
+# - this means `vec(M_g) = inclt' * g`
 # - this does not correspond to an operator in the infinite-dimensional setting.
 # - if you want to obtain the operator f \to \tilde{M}_f \in H_1 \otimes H_1, then this is just M'.
 doc"""
@@ -191,6 +192,17 @@ function ismtf(k,u,mtff,tol=1e-10)
 end
 
 
+
+function m2g(k,u,mgg)
+    mt=inclt(k,u)
+    ug=(mt*mt')\(mt*vec(mgg))
+    u*ug
+end
+
+function ismg(k,u,mgg,tol=1e-10)
+    g=m2g(k,u,mgg)
+    norm(mgg-mg(k,u,g)) < tol
+end
 
 
 # CODE FOR PROJECTING mg's to g's etc.
@@ -226,7 +238,9 @@ end
 # println(norm(mff-a1mt2m*kron(eye(n^2),mtff)*a2mt2m))
 # println(norm(mtff-a1m2mt*kron(eye(n^2),mff)*a2m2mt))
 
-
+#####################################################################
+### LINEARIZATION THEORY
+#####################################################################
 
 
 doc"""
@@ -259,3 +273,29 @@ jointq(k1,u1,u2,q)=kron(eye(size(k1,1)),qchannel(k1,u1,u2,q))*mult(k1,u1)'
 
 
 
+
+#####################################################################
+### SUPERLINEARIZATION THEORY
+#####################################################################
+
+doc"""
+    qkernel(k1,u1,k2,u2,q)
+
+For a Markov transition matrix `q` (in canonical coordinates), 
+return the kernel ``k(x,x')=tr\left[ \tilde{M}_Q(x)^{1/2} \tilde{M}_Q(x')^{1/2} \right].
+"""
+function qkernel(k2,u2,q)
+    n1=size(q,1)
+    function ckq(i,j)
+        mti=mtmu(k2,u2,q[i,:]')
+        smti=real(sqrtm(mti))
+        mtj=mtmu(k2,u2,q[j,:]')
+        smtj=real(sqrtm(mtj))
+        trace(smti*smtj)
+    end
+    kq=zeros(n1,n1)
+    for i=1:n1,j=1:n1
+        kq[i,j]=ckq(i,j)    
+    end
+    kq
+end

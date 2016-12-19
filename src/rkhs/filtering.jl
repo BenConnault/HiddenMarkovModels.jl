@@ -28,12 +28,55 @@ function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{H
 	filter
 end
 
-#direct acces to core algorithm if you already have the trees
+
+function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},initial,data,filteringalgo::Strict)
+	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
+	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
+	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
+	
+	Bx  = emission.leftbasis
+	By  = emission.rightbasis
+
+	@assert Bx==transition.rightbasis
+	@assert Bx==transition.leftbasis
+
+	xbasistree  = RKHSBasisTree(Bx)
+	ybasistree  = RKHSBasisTree(By)
+
+	filter=filtr(transition,emission,xbasistree,ybasistree,initial,data,filteringalgo)
+
+	filter
+end
+
+
+function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},initial,data,filteringalgo::Strict)
+	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
+	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
+	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
+	
+	Bx  = emission.leftbasis
+	By  = emission.rightbasis
+
+	@assert Bx==transition.rightbasis
+	@assert Bx==transition.leftbasis
+
+	xbasistree  = RKHSBasisTree(Bx)
+	ybasistree  = RKHSBasisTree(By)
+
+	filter=filtr(transition,emission,xbasistree,ybasistree,initial,data,filteringalgo)
+
+	filter
+end
+
+#direct acces to core algorithm if you already have the trees, but not the initial distribution
 function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{Hx,Hy},
 	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial::RKHSVector,data,filteringalgo::Strict)
 	kx=2*dimension(rkhs(xbasistree))
-	project(initial,xbasistree,kx)
-	_filtr(transition,emission,xbasistree,ybasistree,ini,data,filteringalgo)
+	# ini=project(initial,xbasistree,kx)   #local projection is probably a bad idea here.
+	Bx=emission.leftbasis
+	xgramian=xbasistree.gram
+	ini=project(initial,Bx,xgramian)		#global projection
+	filtr(transition,emission,xbasistree,ybasistree,ini,data,filteringalgo)
 end
 
 #direct acces to core algorithm if you already have the trees and initial distribution expressed in Bx
@@ -41,7 +84,7 @@ function filtr{Hx<:RKHS,Hy<:RKHS}(transition::RKHSMap{Hx,Hx},emission::RKHSMap{H
 	xbasistree::RKHSBasisTree{Hx},ybasistree::RKHSBasisTree{Hy},initial::Vector{Float64},data,filteringalgo::Strict)
 	# `transition` is P(X_{t+1}|X_t) expressed in (Bx -> Bx)  
 	# `emission` is P(Y_t|X_t) expressed in (Bx -> By) 
-	# `initial` is P(X_1 | Y_1=y_1) in an arbitrary basis
+	# `initial` is P(X_1 | Y_1=y_1) in Bx
 
 	Bx  = emission.leftbasis
 	By  = emission.rightbasis
