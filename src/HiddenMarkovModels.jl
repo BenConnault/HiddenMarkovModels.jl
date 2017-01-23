@@ -25,6 +25,10 @@ include("utils/stochasticmatrices.jl")
 export ei, vecpq, opnorm, partialtrace, rortho
 include("utils/tensors.jl")
 
+export wasserstein, dwasserstein
+include("utils/distances.jl")
+
+
 
 ### "Dynamic Discrete Model" back-end
 

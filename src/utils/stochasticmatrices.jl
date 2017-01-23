@@ -17,18 +17,24 @@ function rssm(dim::Int,density=.2)
 	sparse(m./sum(m,2))	
 end
 
-#stochastic matrix normalization, ie each row is normalized to sum to 1
-function nsm!(m::Array{Float64,2})
-	for i in 1:size(m)[1]
-		m[i,:]/=sum(m[i,:])
-	end
-end
 
-function nsm(m::Array{Float64,2})
-	nsm!(m)
-	m
-end
 
+doc"""
+    dobrushin(q)
+
+Compute the classical Dobrushin coefficient of a Markov transition matrix.
+"""
+function dobrushin(q)
+    n=size(q,1)
+    @assert n==size(q,2)
+    a=0
+    for i=1:n
+        for j=i+1:n
+            a=max(a,norm(q[i,:]-q[j,:],1))
+        end
+    end
+    a/2
+end
 
 
 # REPARAMETRIZATION
