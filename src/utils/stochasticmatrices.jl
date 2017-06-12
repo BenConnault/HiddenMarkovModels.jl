@@ -18,6 +18,14 @@ function rssm(dim::Int,density=.2)
 end
 
 
+stationary(q)=stationaryt(q')
+
+function stationaryt(tq::Array{Float64,2})
+	n=size(tq)[1]
+	v=tq[1:n-1,n]
+	p=((tq[1:n-1,1:n-1].-v)-eye(n-1))\-v
+	vcat(p,1-sum(p))
+end
 
 doc"""
     dobrushin(q)

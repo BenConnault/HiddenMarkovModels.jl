@@ -25,7 +25,7 @@ include("utils/stochasticmatrices.jl")
 export ei, vecpq, opnorm, partialtrace, rortho
 include("utils/tensors.jl")
 
-export wasserstein, dwasserstein
+export wasserstein, dwasserstein, dhilbert, dtv
 include("utils/distances.jl")
 
 
