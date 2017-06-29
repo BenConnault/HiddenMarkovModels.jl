@@ -2,7 +2,7 @@ function filtr(model::DynamicDiscreteModel,data::Array{Int,1})
 	T=length(data)
 	dx,dy=size(model.mu)
 
-	filter=Array(Float64,dx,T)
+	filter=Array{Float64}(dx,T)
 	filter[:,1]=model.mu[:,data[1]]/sum(model.mu[:,data[1]])
 	for t=2:T
 		rho=0.0
@@ -18,7 +18,7 @@ function filtr(model::DynamicDiscreteModel,data::Array{Int,1})
 		end
 	end
 
-	smoother=Array(Float64,dx,T)
+	smoother=Array{Float64}(dx,T)
 	smoother[:,T]=1
 	for t=T-1:-1:1
 		rho=0.0
@@ -34,7 +34,7 @@ function filtr(model::DynamicDiscreteModel,data::Array{Int,1})
 		end
 	end
 
-	conditional=Array(Float64,dx,dx,T)
+	conditional=Array{Float64}(dx,dx,T)
 	for t=1:T-1
 		tempsum=0.0
 		for jx=1:dx

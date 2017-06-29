@@ -2,7 +2,9 @@ module HiddenMarkovModels
 
 importall Distributions, JuMP, Ipopt
 
-using StatsBase: sample,WeightVec,StatisticalModel
+using StatsBase: sample, StatisticalModel
+using StatsFuns: normcdf
+using Distributions: wsample
 
 
 import Base: rand, norm, length
@@ -56,20 +58,39 @@ include("utils/distances.jl")
 
 ### Experimental RKHS filtering
 
-	include("rkhs/vptree.jl")
-	include("rkhs/tupletype.jl")
-	include("rkhs/types.jl")
-	include("rkhs/project.jl")
-	include("rkhs/filtering.jl")
+	# include("rkhs/vptree.jl")
+	# include("rkhs/tupletype.jl")
+	# include("rkhs/types.jl")
+	# include("rkhs/project.jl")
+	# include("rkhs/filtering.jl")
 
-	export instantiate
-	export VPTree, knn, Distance, evaluate
-	export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, LaplaceRKHS, GuilbartRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
-	export dimension,length
-	export FilteringAlgorithm, Strict, General, Alt, project, filtr, filtr_smoothr 
+	# export instantiate
+	# export VPTree, knn, Distance, evaluate
+	# export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, LaplaceRKHS, GuilbartRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
+	# export dimension,length
+	# export FilteringAlgorithm, Strict, General, Alt, project, filtr, filtr_smoothr 
 
 	# line(x)=reshape(x,1,lengh(x))
 
+### Models
+
+	using Kalman
+	include("models/linear-gaussian.jl")
+	include("models/discrete.jl")
+
+
+	export lgmodel, dhmm
+
+### Kernel Filtering
+
+	include("kernelfiltering/rkhs.jl")
+	include("kernelfiltering/kde.jl")
+	include("kernelfiltering/filtering.jl")
+	include("kernelfiltering/kbr.jl")
+	include("kernelfiltering/altfiltering.jl")
+
+	export Dirac, Gauss, Sample,
+		filtr
 
 end
 
@@ -77,4 +98,4 @@ end
 
 ### Discrete RKHS for playing around
 
-include("drkhs/DRKHS.jl")
+# include("drkhs/DRKHS.jl")

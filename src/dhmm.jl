@@ -44,7 +44,7 @@ end
 function hmm(ab::Tuple,mu)
 	a,b=ab
 	dx,dy=size(mu)
-	model=HiddenMarkovModel(Array(Float64,dx,dy,dx,dy),mu,Array(Float64,1),Array(Float64,dx),Array(Float64,dx))
+	model=HiddenMarkovModel(Array{Float64}(dx,dy,dx,dy),mu,Array{Float64}(1),Array{Float64}(dx),Array{Float64}(dx))
 	hmm2ddm!(model,a,b)
 	model
 end
