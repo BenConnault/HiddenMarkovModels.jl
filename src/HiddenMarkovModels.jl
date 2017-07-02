@@ -84,13 +84,14 @@ include("utils/distances.jl")
 ### Kernel Filtering
 
 	include("kernelfiltering/rkhs.jl")
-	include("kernelfiltering/kde.jl")
 	include("kernelfiltering/filtering.jl")
-	include("kernelfiltering/kbr.jl")
-	include("kernelfiltering/altfiltering.jl")
+	include("kernelfiltering/kernel-filter.jl")
+	include("kernelfiltering/particle-filter.jl")
+	include("kernelfiltering/basis-filter.jl")
+	include("kernelfiltering/kde.jl")
+	# include("kernelfiltering/altfiltering.jl")
 
-	export Dirac, Gauss, Sample,
-		filtr
+	export filtr, KF, PF, BF
 
 end
 

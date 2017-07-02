@@ -1,4 +1,5 @@
-abstract DynamicDiscreteModel <: StatisticalModel
+abstract type DynamicDiscreteModel <: StatisticalModel
+end
 	# A concrete implementation of a DynamicDiscreteModel promises to implement the following fields:
 
 	# m::Array{Float64,4}			  	#the transition matrix given as m[x,y,x',y'] 
@@ -15,4 +16,3 @@ abstract DynamicDiscreteModel <: StatisticalModel
 	# rhojac::Array{Float64,1}				
 	# phijac::Array{Float64,2}			
 	# psijac::Array{Float64,2}
-		

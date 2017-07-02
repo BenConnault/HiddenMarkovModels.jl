@@ -1,5 +1,4 @@
 import StatsBase.StatisticalModel
-import Base.rand
 using Optim
 
 import Distributions: loglikelihood, dim

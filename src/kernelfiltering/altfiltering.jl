@@ -19,26 +19,6 @@ rand(model,x,to::Observation)=randb(model,x)
 
 
 
-function markovapprox(model,xx,yy,ky,m=1000,to::TO=Transition())
-    nx=length(xx)
-    ny=length(yy)
-    q=zeros(nx,nx)
-    for ix=1:nx
-        print("$ix ")
-        gi=zeros(ny)
-        for j=1:m
-            y=rand(model,xx[ix],to)
-            for jy=1:ny
-                gi[jy]=gi[jy]+kk(yy[jy],y)/m
-            end            
-        end
-        q[ix,:]=probnorm(ky\gi)
-    end
-    q
-end
-
-
-
 
 function kbfilter(model,ini::Vector{Vector{Float64}},xx,yy,data,m=300)
     kx=gramian(xx)

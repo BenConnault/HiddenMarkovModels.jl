@@ -1,13 +1,39 @@
 # type LinearGaussianSSM{T} <: AbstractLinearGaussian
 
+struct ConditionalGaussian
+    A::Matrix{Float64}
+    sqrtv::Matrix{Float64}
+end
+
 abstract type StrictHiddenMarkovModel
 end
 
 struct LinearGaussian <: StrictHiddenMarkovModel
-    sqrtv::Matrix{Float64}
-    sqrtw::Matrix{Float64}
+    transition::ConditionalGaussian
+    measurement::ConditionalGaussian
     core::LinearGaussianSSM{Float64}
 end
+
+
+function LinearGaussian(pm,pc,om,oc)
+    transition=ConditionalGaussian(pm,real(sqrtm(pc)))
+    measurement=ConditionalGaussian(om,real(sqrtm(oc)))
+    core=LinearGaussianSSM(pm,pc,om,oc)
+    LinearGaussian(transition,measurement,core)
+end
+
+cpdf(model::ConditionalGaussian,x,y)=exp(-sum((model.sqrtv\(y-model.A*x)).^2)/2)/((2*pi)^(length(y)/2)*det(model.sqrtv))
+
+function rand(model::ConditionalGaussian,x::Vector{Float64})
+    mu=model.A*x
+    n=length(x)
+    epsilon=randn(n)
+    scaled_epsilon=model.sqrtv*epsilon
+    mu+scaled_epsilon
+end
+
+
+
 
 # # from Kalman.jl
 # type LinearGaussianSSM{T} <: AbstractLinearGaussian
@@ -16,8 +42,8 @@ end
 #   G::Matrix{T}    # observation matrix
 #   W::Matrix{T}    # observation variance
 
-randa(model::LinearGaussian,x)=model.core.F*x + model.sqrtv * randn(length(x))
-randb(model::LinearGaussian,x)=model.core.G*x + model.sqrtw * randn(size(model.core.G,1))
+# randa(model::LinearGaussian,x)=model.core.F*x + model.sqrtv * randn(length(x))
+# randb(model::LinearGaussian,x)=model.core.G*x + model.sqrtw * randn(size(model.core.G,1))
     
 
 
@@ -53,7 +79,7 @@ function lgmodel()
     pc = [1 0.2; 0.2 1]         # process variance
     om = eye(2)     # observation model parameter
     oc = eye(2)      # observation variance
-    LinearGaussian(real(sqrtm(pc)::Matrix{Float64}),real(sqrtm(oc)),LinearGaussianSSM(pm, pc, om, oc))
+    LinearGaussian(pm, pc, om, oc)
 end
 
 function lgmodel(n)
@@ -62,6 +88,6 @@ function lgmodel(n)
     pc = [0.5^abs(i-j)*sqrt(0.8^(i+j)) for i=1:n,j=1:n]         # process variance
     om = eye(n)     # observation model parameter
     oc = 0.1*eye(n)     # observation variance
-    LinearGaussian(real(sqrtm(pc)),real(sqrtm(oc)),LinearGaussianSSM(pm, pc, om, oc))
+    LinearGaussian(pm, pc, om, oc)
 end
 
