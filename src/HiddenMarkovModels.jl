@@ -86,12 +86,13 @@ include("utils/distances.jl")
 	include("kernelfiltering/rkhs.jl")
 	include("kernelfiltering/filtering.jl")
 	include("kernelfiltering/kernel-filter.jl")
+	include("kernelfiltering/low-rank-kernel-filter.jl")
 	include("kernelfiltering/particle-filter.jl")
 	include("kernelfiltering/basis-filter.jl")
 	include("kernelfiltering/kde.jl")
 	# include("kernelfiltering/altfiltering.jl")
 
-	export filtr, KF, PF, BF
+	export filtr, KF, PF, BF, LRKF, LRBF
 
 end
 

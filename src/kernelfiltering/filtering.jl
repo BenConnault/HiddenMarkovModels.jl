@@ -9,10 +9,10 @@ end
 
 
 
-function markovapprox(model,xx,yy,ky,m=1000)
+function markovapprox(model,xx,yy,ky,m=1000,tol=0.1)
     nx=length(xx)
     ny=length(yy)
-    q=zeros(nx,nx)
+    q=zeros(nx,ny)
     for ix=1:nx
         print("$ix ")
         gi=zeros(ny)
@@ -22,10 +22,13 @@ function markovapprox(model,xx,yy,ky,m=1000)
                 gi[jy]=gi[jy]+kk(yy[jy],y)/m
             end            
         end
-        q[ix,:]=probnorm(ky\gi)
+        q[ix,:]=probnorm((ky+tol*I/sqrt(ny))\gi)
     end
     q
 end
+
+
+
 
 
 

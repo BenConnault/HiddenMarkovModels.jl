@@ -8,8 +8,8 @@ struct KernelFilter <: KernelOrBasisFilter
     yy::Vector{Vector{Float64}}
     kx::Matrix{Float64}
     ky::Matrix{Float64}
-    m::Int
-    tol::Float64    #regularization parameter
+    m::Int          # number of simulation draws used for each row
+    tol::Float64    # regularization parameter
 end
 
 function KF(xx,yy,m=500,tol=1.0)
@@ -31,12 +31,11 @@ end
 function filtr(model,data,ini::Vector{Float64},kf::KernelFilter)
 
     print("Building transition matrix... ")
-    qxx=markovapprox(model.transition,kf.xx,kf.xx,kf.kx,kf.m)
+    qxx=markovapprox(model.transition,  kf.xx, kf.xx, kf.kx, kf.m, kf.tol)
     println()
 
     print("Building observation matrix... ")
-    qxy=markovapprox(model.measurement,kf.xx,kf.yy,kf.ky,kf.m)
-    # qxy=markovapprox(model.observation,xx,yy,ky,m)    # TO DO: rewrite dispatch flow
+    qxy=markovapprox(model.measurement, kf.xx, kf.yy, kf.ky, kf.m, kf.tol)
     println()
     
     filtr(model,data,ini,qxx,qxy,kf)
@@ -69,3 +68,4 @@ function filtr(model,data,ini,qxx,qxy,kf::KernelFilter)
 
     fil,qxx,qxy
 end
+

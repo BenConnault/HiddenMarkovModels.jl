@@ -32,7 +32,7 @@ function filtr(model,data,initial,pf::BootstrapParticleFilter)
             xxx[:,i]=rand(model.transition,xx[:,i,t-1])
             w[i]=cpdf(model.measurement,xxx[:,i],data[t])
         end
-        normalize!(w,1) #I believe this may unnecessary as wsample can take unnormalized weights
+        # normalize!(w,1) #I believe this may unnecessary as wsample can take unnormalized weights
         indx=Distributions.wsample(1:n,w,n)
         xx[:,:,t]=xxx[:,indx]
     end
