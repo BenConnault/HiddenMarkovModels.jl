@@ -46,7 +46,9 @@ end
 # `q` is given as `(A,B,c)`, qg=A*B*(g-dot(c,g)) + dot(c,g)
 function lrupq(mu,q)
     A,B,c=q
-    B'*A'*mu+c
+    Atmu=At_mul_B(A,mu)
+    BtAtmu=At_mul_B(B,Atmu)
+    BtAtmu+c
 end
 
 # for testing purposes
@@ -75,6 +77,7 @@ end
 #     probnorm(pix)
 # end
 
+# return (AB+alpha I)\g
 function woodbury(A,B,alpha,g)
     h=B*g
     m=(alpha*I+B*A)
@@ -93,7 +96,8 @@ function lrkbr(q,lky,rky,mux,gy,tol=1.0)
     ch=dot(c,h)
     qb=A*B*(h-ch)+ch
     pix=mux.*qb
-    probnorm(pix)
+    # probnorm(pix)
+    pix/sum(pix)
 end
 
 ###################################################
@@ -115,7 +119,7 @@ struct LowRankKernelFilter <: KernelOrBasisFilter
     tol::Float64    #regularization parameter
 end
 
-function LRKF(xx,yy,snx,tol=1.0,m=500)
+function LRKF(xx,yy,snx,tol::Float64=1.0,m::Int=500)
     kx=gramian(xx)
     ky=gramian(yy)
     u,s,v=lra(full(ky),snx)
@@ -123,6 +127,15 @@ function LRKF(xx,yy,snx,tol=1.0,m=500)
     rky=v
     LowRankKernelFilter(xx,yy,kx,ky,lky,rky,snx,m,tol)
 end
+
+# function LRKF(xx,yy,kx,ky,snx,tol=1.0,m=500)
+#     kx=gramian(xx)
+#     ky=gramian(yy)
+#     u,s,v=lra(full(ky),snx)
+#     lky=u*diagm(s)
+#     rky=v
+#     LowRankKernelFilter(xx,yy,kx,ky,lky,rky,snx,m,tol)
+# end
 
 
 function filtr(model,data,ini::Vector{Float64},kf::LowRankKernelFilter)
@@ -141,7 +154,7 @@ end
 
 
 
-function filtr(model,data,ini,qxx,qxy,kf::LowRankKernelFilter)
+function filtr(model,data,ini::Vector{Float64},qxx,qxy,kf::LowRankKernelFilter)
     T=length(data)
     nx,ny=size(qxy[1],1),size(qxy[2],2)
 

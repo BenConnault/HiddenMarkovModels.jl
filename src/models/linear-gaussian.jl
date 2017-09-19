@@ -32,8 +32,26 @@ function rand(model::ConditionalGaussian,x::Vector{Float64})
     mu+scaled_epsilon
 end
 
+############################
+# For experimenting with renormalizing a model to [-1,1]
+
+    # r2c(x)=tanh(0.1*x)
+    # c2r(x)=atanh(x)/0.1
 
 
+    # # r2c(x)=x
+    # # c2r(x)=x
+
+
+    # function rand(model::ConditionalGaussian,x::Vector{Float64})
+    #     mu=model.A*c2r.(x)
+    #     n=length(x)
+    #     epsilon=randn(n)
+    #     scaled_epsilon=model.sqrtv*epsilon
+    #     r2c.(mu+scaled_epsilon)
+    # end
+#
+############################
 
 # # from Kalman.jl
 # type LinearGaussianSSM{T} <: AbstractLinearGaussian
@@ -87,7 +105,8 @@ function lgmodel(n)
     pm = p\(diagm((rand(n)-.5)*1.6)*p)     # process model parameter
     pc = [0.5^abs(i-j)*sqrt(0.8^(i+j)) for i=1:n,j=1:n]         # process variance
     om = eye(n)     # observation model parameter
-    oc = 0.1*eye(n)     # observation variance
+    # oc = 0.1*eye(n)     # observation variance
+    oc = eye(n)     # observation variance
     LinearGaussian(pm, pc, om, oc)
 end
 

@@ -246,6 +246,7 @@ end
 #     prod
 # end
 
+# # inner product between point and normal for the Laplace kernel
 # function lip(x::Float64,mu::Float64,sigma::Float64)::Float64
 #     c1=sigma-(mu-x)/sigma
 #     c2=-sigma-(mu-x)/sigma

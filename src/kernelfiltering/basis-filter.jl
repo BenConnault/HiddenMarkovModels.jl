@@ -73,7 +73,8 @@ end
 function LRBF(xx,yy,snx,m=500,tol=1.0)
     kx=gramian(xx)
     ky=gramian(yy)
-    u,s,v=lra(full(ky),snx)
+    # u,s,v=lra(full(ky),snx)
+    u,s,v=rlra(ky,snx)
     lky=u*diagm(s)
     rky=v
     LowRankBasisFilter(xx,yy,kx,ky,lky,rky,snx,m,tol)

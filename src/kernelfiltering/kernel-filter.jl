@@ -12,7 +12,11 @@ struct KernelFilter <: KernelOrBasisFilter
     tol::Float64    # regularization parameter
 end
 
-function KF(xx,yy,m=500,tol=1.0)
+function KF(xx,yy,kx,ky,m=500,tol=1.0)
+    KernelFilter(xx,yy,kx,ky,m,tol)
+end
+
+function KF(xx,yy,m::Int=500,tol::Float64=1.0)
     kx=gramian(xx)
     ky=gramian(yy)
     KernelFilter(xx,yy,kx,ky,m,tol)
@@ -27,6 +31,12 @@ function filtr(model,data,ini::Vector{Vector{Float64}},kf::KernelOrBasisFilter)
     filtr(model,data,init,kf)
 end
 
+function filtr(model,data,ini::Vector{Vector{Float64}},qxx,qxy,kf::KernelOrBasisFilter)
+    n=length(ini)
+    g=gramian(kf.xx,ini)*ones(n)/n
+    init=probnorm(kf.kx\g)
+    filtr(model,data,init,qxx,qxy,kf)
+end
 
 function filtr(model,data,ini::Vector{Float64},kf::KernelFilter)
 
@@ -43,7 +53,7 @@ end
 
 
 
-function filtr(model,data,ini,qxx,qxy,kf::KernelFilter)
+function filtr(model,data,ini::Vector{Float64},qxx,qxy,kf::KernelFilter)
     T=length(data)
     nx,ny=size(qxy)
 
