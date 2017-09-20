@@ -1,6 +1,12 @@
 module HiddenMarkovModels
 
-importall Distributions, JuMP, Ipopt
+importall Distributions
+
+importall JuMP, Ipopt
+# used for
+#  - Wasserstein distance
+#  - 
+
 
 using StatsBase: sample, StatisticalModel
 using StatsFuns: normcdf
@@ -15,21 +21,25 @@ import Base: rand, norm, length
 
 export	HMM, forward_backward, viterbi, smoothed_forward_backward, fit!
 
-include("hmm_types.jl")
-include("hmm_filtering.jl")
-include("hmm_fit.jl")
+include("alex/hmm_types.jl")
+include("alex/hmm_filtering.jl")
+include("alex/hmm_fit.jl")
 
 ######## Ben
 
-export rsm
 include("utils/stochasticmatrices.jl")
+export rsm
 
-export ei, vecpq, opnorm, partialtrace, rortho
 include("utils/tensors.jl")
+export ei, vecpq, opnorm, partialtrace, rortho
 
-export wasserstein, dwasserstein, dhilbert, dtv
 include("utils/distances.jl")
+export wasserstein, dwasserstein, dhilbert, dtv
 
+include("utils/filtering-utils.jl")
+include("utils/rkhs.jl")
+
+# include("utils/kde.jl")
 
 
 ### "Dynamic Discrete Model" back-end
@@ -49,7 +59,7 @@ include("utils/distances.jl")
 
 ### "Discrete Hidden Markov Model": a thin layer on top of the "Dynamic Discrete Model" back-end
 
-	include("dhmm.jl")
+	include("dhmm/dhmm.jl")
 
 	export 	coef!, rand, loglikelihood, mle, dim, 
 		em, viterbi, filtr,
@@ -75,6 +85,8 @@ include("utils/distances.jl")
 ### Models
 
 	using Kalman
+	include("models/abstract-hidden-markov.jl")
+	include("models/strict-hidden-markov.jl")
 	include("models/linear-gaussian.jl")
 	include("models/discrete.jl")
 
@@ -83,16 +95,16 @@ include("utils/distances.jl")
 
 ### Kernel Filtering
 
-	include("kernelfiltering/rkhs.jl")
-	include("kernelfiltering/filtering.jl")
-	include("kernelfiltering/kernel-filter.jl")
-	include("kernelfiltering/low-rank-kernel-filter.jl")
-	include("kernelfiltering/particle-filter.jl")
-	include("kernelfiltering/basis-filter.jl")
-	include("kernelfiltering/kde.jl")
+	include("filtering/generic-filter.jl")
+	include("filtering/kernel-filter.jl")
+	include("filtering/high-dim-kernel-filter.jl")
+	include("filtering/particle-filter.jl")
+	include("filtering/basis-filter.jl")
 	# include("kernelfiltering/altfiltering.jl")
 
-	export filtr, KF, PF, BF, LRKF, LRBF
+	export StrictHiddenMarkovModel
+	export KF, PF, BF, LRKF, LRBF
+	export filtr
 
 end
 

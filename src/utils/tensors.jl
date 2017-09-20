@@ -1,4 +1,3 @@
-
 doc"""
    ei(i,n)
 
@@ -148,7 +147,7 @@ doc"""
     opdensity(m2,m1)
 
 Find a positive T such that ``T M_1 T = M_2`` (Pedersen-Takesaki aka. noncommutative Radon-Nikodym derivative dM2/dM1). 
-Use an explicit formula valid when ``M_1`` is invertible.
+Use an explicit formula valid only when ``M_1`` is invertible.
 """
 function opdensity(m2,m1)
     sm1=real(sqrtm(m1))

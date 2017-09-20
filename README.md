@@ -1,12 +1,23 @@
 # HiddenMarkovModels.jl
 
-Basic simulation / parameter estimation / latent state inference for hidden Markov models. Thin front-end package built on top of [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
+As of 10/2017, the package implements:
+- A fairly complete set of methods for working with discrete hidden Markov models.
+- Basic Kalman filtering.
+- Experimental approximate nonlinear filtering algorithms via kernel filtering.
+The tentative scope of the package is simulation / nonlinear filtering / parameter estimation / latent state inference for hidden Markov models. I don't have as much time as I would like for growing the package. If you may be interested in (paid) work on this package, please don't hesitate to get in touch.
 
-## Installation
+##Overview
 
-~~~julia
-julia> Pkg.add("HiddenMarkovModels")
-~~~
+
+The package is organized around implicit interfaces: it defines abstract types such as `StrictHiddenMarkov` and implements methods such as `filtr(model::StrictHiddenMarkov,data,initial,technique::FilteringTechnique)`, relying on the user's implementation of the suitable methods for the given type, such as `randa(model::StrictHiddenMarkov,x)` to draw next period's random unobserved state x_t+1 given today's unobserved state x_t=x, and similarly for drawing an observation. 
+
+| Models / Algorithms | Filtering  | Smoothing | Backward Sampling | Viterbi | MLE | EM  |
+| ------------------- | ---------- | --------- | ----------------- | ------- | --- | --- |
+| Discrete            | X          | X         | X                 | X       | X   | X   |
+| LinearGaussian      | X          | X         |                   |         |     |     |
+| Strict              | KF, BF, PF |           |                   |         |     |     |
+| AR                  | KF, BF, PF |           |                   |         |     |     |
+
 
 ##Usage
 

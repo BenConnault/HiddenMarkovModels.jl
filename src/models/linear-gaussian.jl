@@ -5,8 +5,8 @@ struct ConditionalGaussian
     sqrtv::Matrix{Float64}
 end
 
-abstract type StrictHiddenMarkovModel
-end
+# abstract type StrictHiddenMarkovModel
+# end
 
 struct LinearGaussian <: StrictHiddenMarkovModel
     transition::ConditionalGaussian

@@ -23,7 +23,8 @@ function KF(xx,yy,m::Int=500,tol::Float64=1.0)
 end
 
 
-
+# - Initial nonlinear filter is given as a sample, must be expressed in basis
+# - approximation of the dynamics have not been computed yet
 function filtr(model,data,ini::Vector{Vector{Float64}},kf::KernelOrBasisFilter)
     n=length(ini)
     g=gramian(kf.xx,ini)*ones(n)/n
@@ -31,6 +32,9 @@ function filtr(model,data,ini::Vector{Vector{Float64}},kf::KernelOrBasisFilter)
     filtr(model,data,init,kf)
 end
 
+
+# - Initial nonlinear filter is given as a sample, must be expressed in basis
+# - approximation of the dynamics have been computed
 function filtr(model,data,ini::Vector{Vector{Float64}},qxx,qxy,kf::KernelOrBasisFilter)
     n=length(ini)
     g=gramian(kf.xx,ini)*ones(n)/n
@@ -38,6 +42,9 @@ function filtr(model,data,ini::Vector{Vector{Float64}},qxx,qxy,kf::KernelOrBasis
     filtr(model,data,init,qxx,qxy,kf)
 end
 
+
+# - Initial nonlinear filter is already given in the basis
+# - approximation of the dynamics have not been computed yet
 function filtr(model,data,ini::Vector{Float64},kf::KernelFilter)
 
     print("Building transition matrix... ")
