@@ -1,6 +1,6 @@
 
 
-function _filtr(model::LG,data,ini,filtering_method::KalmanFilter)
+function _filtr(model::LinearGaussian,data,ini,filtering_method::KalmanFilter)
     T=length(data)
 
     ini_mean,ini_vcov = ini
@@ -28,7 +28,6 @@ function _filtr(model::LG,data,ini,filtering_method::KalmanFilter)
         A_mul_B!(temp, model.axx, view(filter_vcov,:,:,t))
         A_mul_Bt!(predic_vcov, temp, model.axx)
         broadcast!(+,predic_vcov,predic_vcov,vxx)
-
 
         A_mul_B!(temp, model.axy, predic_vcov)
         A_mul_Bt!(S, temp, model.axy)

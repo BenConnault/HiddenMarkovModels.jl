@@ -1,3 +1,23 @@
+# API for common update functions 
+
+function mat(xx::Vector{Vector{Float64}})
+    T = length(xx)
+    n = length(xx[1])
+    yy = zeros(n,T)
+    for t=1:T
+        yy[:,t] = xx[t]
+    end
+    yy 
+end
+
+function unmat(xx::Matrix{Float64})
+    n,T = size(xx)
+    yy = Array{Vector{Float64}}(T)
+    for t=1:T
+        yy[t] = xx[:,t]
+    end
+    yy
+end
 
 
 # API for common update functions 

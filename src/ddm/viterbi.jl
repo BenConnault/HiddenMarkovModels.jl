@@ -26,7 +26,7 @@ function viterbi(model::DynamicDiscreteModel,data::Array{Int,1})
 end
 
 #wrapper for panel data
-function viterbi(model::DynamicDiscreteModel,data::Array{Array,1})
+function viterbi(model::DynamicDiscreteModel,data::Vector{Vector{Int}})
 	n=length(data)
 	viterbipaths=Array(Array{Int,1},n)
 	for i=1:n

@@ -1,11 +1,17 @@
-import Distributions: Dirichlet
 
 
-line(x::AbstractArray)=reshape(x,1,length(x))
+# line(x::AbstractArray)=reshape(x,1,length(x))
 
-# draw random stochastic matrix
-rsm(dx::Int,dy::Int)=mapslices(x->rand(Dirichlet(x)),ones(dx,dy),2)
-rsm(k::Int)=rsm(k,k)
+# Normalize Stochastic Matrix
+nsm(q) = q./sum(q,2)
+
+
+# Random Stochastic Matrix
+rsm(m,n) = rand(m,n) |> nsm
+rsm(m) = rsm(m,m)
+
+# rsm(dx::Int,dy::Int)=mapslices(x->rand(Distributions.Dirichlet(x)),ones(dx,dy),2)   # would need to add an import
+
 
 # draw a sparse random stochastic matrix
 function rssm(dim::Int,density=.2)

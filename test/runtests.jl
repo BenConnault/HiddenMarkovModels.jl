@@ -1,23 +1,9 @@
 using Base.Test
 using HiddenMarkovModels
+HMM = HiddenMarkovModels
 
 println("hi")
 
-include("utils.jl")
-
-# Alex
-# include("hmm_discrete.jl") 
-# include("hmm_normal.jl")
-
-# DMM back-end
-# include("ddm.jl")
-
-# Discrete HMMs
-# include("dhmm.jl")
-
-include("rkhs_tupletype.jl")
-include("rkhs_vptree.jl")
-include("rkhs_types.jl")
-include("rkhs_filtering.jl")
-
-# include("drkhs.jl")
+# include("utils.jl")
+include("discrete-with-old-backend.jl")
+include("linear-gaussian-models.jl")

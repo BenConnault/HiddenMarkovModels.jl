@@ -1,54 +1,36 @@
 module HiddenMarkovModels
 
-importall Distributions
-
-importall JuMP, Ipopt
-# used for
-#  - Wasserstein distance
-#  - 
-
-
-using StatsBase: sample, StatisticalModel
-using StatsFuns: normcdf
+# For using   
+using StatsFuns: normcdf 
 using Distributions: wsample
 
+# For extending   
+using  StatsBase
+import StatsBase: loglikelihood   # loglikelihood
+import Base: rand
+# using Base: rand, norm, length
 
-import Base: rand, norm, length
-
-
-
-######### Alex
-
-export	HMM, forward_backward, viterbi, smoothed_forward_backward, fit!
-
-include("alex/hmm_types.jl")
-include("alex/hmm_filtering.jl")
-include("alex/hmm_fit.jl")
-
-######## Ben
 
 include("utils/stochasticmatrices.jl")
-export rsm
+### cheap export: copy-paste in your workspace the line below if you want to use the internal methods
+# using HiddenMarkovModels: rsm   
 
 include("utils/tensors.jl")
-export ei, vecpq, opnorm, partialtrace, rortho
+# using HiddenMarkovModels: ei, vecpq, opnorm, partialtrace, rortho
 
 include("utils/distances.jl")
-export wasserstein, dwasserstein, dhilbert, dtv
+# using HiddenMarkovModels: dhilbert, dtv
 
 include("utils/filtering-utils.jl")
 include("utils/rkhs.jl")
 
 # include("utils/kde.jl")
 
+export coef!, loglikelihood
 
 ### "Dynamic Discrete Model" back-end
 
-	# Define a StatisticalModel interface and provide convenience functions such as numerical optimization of the likelihood based on Optim.jl.
-	# This is a good candidate for sending upstream to eg. StatsBase.
-	include("ddm/statisticalmodels-stopgap.jl")
-
-	include("ddm/dynamicdiscretemodel.jl")  # `abstract DynamicDiscreteModel <: StatisticalModel` interface
+	include("ddm/dynamicdiscretemodel.jl")  # `DynamicDiscreteModel`
 	include("ddm/simulate.jl")              # `rand`
 	include("ddm/loglikelihood.jl")         # forward filtering + loglikelihood + jacobian
 	include("ddm/estep.jl")                 # e-step of the EM algorithm.
@@ -56,44 +38,23 @@ include("utils/rkhs.jl")
 	include("ddm/viterbi.jl")
 	include("ddm/filtering.jl")				#plain computation of the filter-smoother. Not used in loglikelihood or estep but sometimes useful.	
 	include("ddm/toymodel.jl")				#Useful for testing and examples.	
+	include("ddm/dhmm.jl")					# a thin layer on top of the "Dynamic Discrete Model" back-end, all previous functions
 
-### "Discrete Hidden Markov Model": a thin layer on top of the "Dynamic Discrete Model" back-end
-
-	include("dhmm/dhmm.jl")
-
-	export 	coef!, rand, loglikelihood, mle, dim, 
-		em, viterbi, filtr,
-		baumwelch, hmm, theta2ab
-
-
-### Experimental RKHS filtering
-
-	# include("rkhs/vptree.jl")
-	# include("rkhs/tupletype.jl")
-	# include("rkhs/types.jl")
-	# include("rkhs/project.jl")
-	# include("rkhs/filtering.jl")
-
-	# export instantiate
-	# export VPTree, knn, Distance, evaluate
-	# export AtomicRKHS, RKHS, GaussianRKHS, DiscreteRKHS, LaplaceRKHS, GuilbartRKHS, RKHSBasis, RKHSVector, RKHSMap, KernelDistance, RKHSBasisTree, rkhs, kernel, gramian
-	# export dimension,length
-	# export FilteringAlgorithm, Strict, General, Alt, project, filtr, filtr_smoothr 
-
-	# line(x)=reshape(x,1,lengh(x))
+	export 	em, viterbi, filtr, baumwelch, hmm, theta2ab
 
 ### Models
 
-	using Kalman
 	include("models/abstract-hidden-markov.jl")
 	include("models/strict-hidden-markov.jl")   #including discrete
+
+	# using Kalman
 	include("models/linear-gaussian.jl")
 	# include("models/discrete.jl")
 
 
-	export lgmodel, dhmm
+	# export lgmodel, dhmm
 
-### Kernel Filtering
+### Filtering
 
 	include("filtering/generic-filter.jl")
 	include("filtering/kalman-filter.jl")
@@ -101,18 +62,18 @@ include("utils/rkhs.jl")
 	# include("filtering/high-dim-kernel-filter.jl")   #TO ADAPT
 	# include("filtering/kernel-density-filter.jl")    #TO ADAPT
 	
-	# include("filtering/kernel-filter.jl")
-	# include("kernelfiltering/altfiltering.jl")
-
 	export StrictHiddenMarkov
 	export KKF, PF
 	# , BF, LRKF, LRBF
 	export filtr
 
+
+
+### Commented out
+
+	# importall JuMP, Ipopt
+	# include("utils/wasserstein.jl")   # needs external optimization package
+    # using HiddenMarkovModels: wasserstein, dwasserstein
+
 end
 
-
-
-### Discrete RKHS for playing around
-
-# include("drkhs/DRKHS.jl")
