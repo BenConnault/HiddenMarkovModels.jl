@@ -2,22 +2,26 @@
 
 Concrete types are preceded by a (*)
 
-## TYPES FOR MODELS
+TYPES FOR MODELS
 
+~~~
 AbstractHiddenMarkovModel
 	StrictHiddenMarkov
 		*DiscreteStrictHiddenMarkov
 		*LinearGaussian
+~~~
 
 
-## TYPES FOR FILTERING TECHNIQUES
+TYPES FOR FILTERING TECHNIQUES
 
+~~~
 FilteringTechnique
 	KXF _(used for dispatching `initial_filter`)_
 		*KKF_SHM
 		*KDF_SHM
 	*DiscreteFilter
 	*KalmanFilter
+~~~
 
 
 
@@ -59,7 +63,8 @@ end
 (2) Some of the methods contracted by the `StatsBase.StatisticalModel`'s interface are not applicable (`adjr2`?). The list of methods (09/2017):
 
 ~~~
-adjr2, aic, aicc, bic, coef, coeftable, confint, deviance, dof, fit, fit!, loglikelihood, nobs, nulldeviance, r2, stderr, vcov
+adjr2, aic, aicc, bic, deviance, dof, nulldeviance, r2, 
+stderr, vcov, fit, fit!, loglikelihood, nobs, coef, coeftable, confint
 ~~~
 
 Note that `StatsBase` is now the owner of `loglikelihood` (I think it used to be `Distributions.jl`).
