@@ -1,3 +1,30 @@
+struct LG <: StrictHiddenMarkov
+    axx::Matrix{Float64}
+    sqrtvxx::Matrix{Float64}
+    axy::Matrix{Float64}
+    sqrtvxy::Matrix{Float64}
+end
+
+
+struct KalmanFilter <: FilteringTechnique
+end
+
+
+
+cgaussian(a,sqrtv,x) = a*x+sqrtv*randn(length(x))
+
+draw_x(model::LG,x) = cgaussian(model.axx,model.sqrtvxx,x)
+draw_y(model::LG,x) = cgaussian(model.axy,model.sqrtvxy,x)
+
+initial_filter(model::LG,ini,filtering_method) = ini
+filtr(model::LG,data,ini) = filtr(model,data,ini,KalmanFilter())
+
+
+
+
+
+
+
 # type LinearGaussianSSM{T} <: AbstractLinearGaussian
 
 struct ConditionalGaussian
@@ -5,10 +32,10 @@ struct ConditionalGaussian
     sqrtv::Matrix{Float64}
 end
 
-# abstract type StrictHiddenMarkovModel
+# abstract type StrictHiddenMarkov
 # end
 
-struct LinearGaussian <: StrictHiddenMarkovModel
+struct LinearGaussian <: StrictHiddenMarkov
     transition::ConditionalGaussian
     measurement::ConditionalGaussian
     core::LinearGaussianSSM{Float64}

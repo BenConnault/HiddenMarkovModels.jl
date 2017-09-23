@@ -5,6 +5,39 @@ end
 struct Laplace <: Kernel
 end
 
+# kk(x1::Int,x2::Int,place_holder=Laplace()) = 1.0*(x1==x2)
+kk(x1::Int,x2::Int,place_holder=Laplace()) = exp(-abs(x1-x2))
+
+# NOTE: for now I went with a design where I am not storing or using Symmetric kernel matrices
+#       (this shows in the FilteringTechnique types that carry the kernels in memory )
+#       If I change my mind I can uncomment below
+# function gramian(yy,kt::Kernel=Laplace())
+#     ny=length(yy)
+#     ky=zeros(ny,ny)
+#     for iy=1:ny
+#         for jy=iy:ny
+#             ky[iy,jy]=kk(yy[iy],yy[jy],kt)
+#         end
+#     end
+#     Symmetric(ky)
+# end
+
+gramian(yy,kt::Kernel=Laplace())=gramian(yy,yy,kt)
+
+
+function gramian(yy1,yy2,kt::Kernel=Laplace())
+    n1=length(yy1)
+    n2=length(yy2)
+    ky=zeros(n1,n2)
+    for iy=1:n1
+        for jy=1:n2
+            ky[iy,jy]=kk(yy1[iy],yy2[jy],kt)
+        end
+    end
+    ky
+end
+
+
 
 function kk(x1::Vector{Float64},x2::Vector{Float64},kt::Laplace=Laplace())
     n=length(x1)
@@ -18,30 +51,6 @@ end
 
 
 
-function gramian(yy::Vector{Vector{Float64}},kt::Kernel=Laplace())
-    ny=length(yy)
-    ky=zeros(ny,ny)
-    for iy=1:ny
-        for jy=iy:ny
-            ky[iy,jy]=kk(yy[iy],yy[jy],kt)
-        end
-    end
-    Symmetric(ky)
-end
-
-
-function gramian(yy1::Vector{Vector{Float64}},yy2::Vector{Vector{Float64}},kt::Kernel=Laplace())
-    n1=length(yy1)
-    n2=length(yy2)
-    ky=zeros(n1,n2)
-    for iy=1:n1
-        for jy=1:n2
-            ky[iy,jy]=kk(yy1[iy],yy2[jy],kt)
-        end
-    end
-    ky
-end
-
 
 probnorm(mu)=normalize(mu.*(mu.>0),1)
 
@@ -49,12 +58,13 @@ probnorm(mu)=normalize(mu.*(mu.>0),1)
 """
     kbr(q,ky,mux,gy)
 
-Compute the kernel Bayes rule based on a precomputed transition function matrix from `xx` to `yy`.
-`yy` has Gramian `ky`.
-`mux` the coordinate vector of the prior in `xx`.
-`gy[j]` gives the inner product of the data `k_y` with ``k_{y_j}``, 
-ie. `gy[j]=k(yy[j],y)`. 
-Return the coordinate vector of the posterior in `xx`.
+Compute the kernel Bayes rule `prior mux -> posterior conditional on data y0`
+based on a precomputed transition function matrix from `bxx` to `byy`.
+`byy` has Gramian `ky`.
+`mux` the coordinate vector of the prior in `bxx`.
+`gy[j]` gives the inner product of the data `k_y0` with ``k_{y_j}``, 
+ie. `gy[j]=k(yy[j],y0)`. 
+Return the coordinate vector of the posterior in `bxx`.
 """
 function kbr(q,ky,mux,gy,tol=1.0)
     # mu=diagm(mux)*q    # you don't want to store the full joint in memory, better to recompute it on the fly below
@@ -62,9 +72,11 @@ function kbr(q,ky,mux,gy,tol=1.0)
     n=length(muy)
     dmuy=diagm(muy)
     # pix=diagm(mux)*q*(ky\((ky*dmuy+tol/sqrt(n)*I)\gy))    #THIS MYSTERIOUSLY SEEMS TO WORK OK  
-    pix=diagm(mux)*q*((ky*dmuy+tol/sqrt(n)*I)\gy)     
+    # pix=diagm(mux)*q*((dmuy*ky+tol/sqrt(n)*I)\gy)           #THIS DOES NOT WORK, TESTED ON DISCRETE CASE    
+    pix=diagm(mux)*q*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
     probnorm(pix)
 end
+
 
 
 
@@ -104,6 +116,8 @@ function kbr2(kx,ky,gx,gy,tol=1.0)
     pix=dmu*ky*(((dmu*ky)^2+tol/sqrt(n)*I)\(dmu*gy))
     pix
 end
+
+
 
 
 ##########################################################################################

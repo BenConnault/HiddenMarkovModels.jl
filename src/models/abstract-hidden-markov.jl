@@ -41,24 +41,24 @@ end
 abstract type FilteringTechnique
 end
 
-abstract type FilteringTech
+# Any method that uses Kernel method for mutation, 
+# so far: KKFs and KDFs.
+# Don't want to use a union type because these are KKF_GHM, KKF_BHM, KKF_AHM, KKF_SHM,  
+abstract type KXF <: FilteringTechnique
 end
 
-abstract type KernelOrBasis <: FilteringTech
-end
-
-
-
-function initial_filter(model,ini_sample,filtering_method::KernelOrBasis)
+function initial_filter(model,ini_sample,filtering_method::KXF)
     n=length(ini_sample)
     g=gramian(filtering_method.bxx,ini_sample)*ones(n)/n
     probnorm(filtering_method.kx\g)
 end
 
 
+
+# THIS NEEDS TO BE CLEANED UP: no all AbstractHiddenMarkovModels call rand(model,flag,x)
 # This works only for continuous models where each observation is different (does it?)
 # to do: make the kernel `kk` an option, maybe by adding `model` as an argument
-function markovapprox(model,bxx,byy,ky,m=1000,tol=0.1)
+function markovapprox(model,flag,bxx,byy,ky,m=1000,tol=0.1)
     nx=length(bxx)
     ny=length(byy)
     q=zeros(nx,ny)
@@ -66,7 +66,7 @@ function markovapprox(model,bxx,byy,ky,m=1000,tol=0.1)
         print("$ix ")
         gi=zeros(ny)
         for j=1:m
-            y=rand(model,bxx[ix])
+            y=rand(model,flag,bxx[ix])
             for jy=1:ny
                 gi[jy]=gi[jy]+kk(byy[jy],y)/m
             end            
@@ -76,3 +76,5 @@ function markovapprox(model,bxx,byy,ky,m=1000,tol=0.1)
     q
 end
 
+rand(model::AbstractHiddenMarkovModel,flag::Val{:x},x) = draw_x(model,x)
+rand(model::AbstractHiddenMarkovModel,flag::Val{:y},x) = draw_y(model,x)

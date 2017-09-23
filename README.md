@@ -1,25 +1,27 @@
 # HiddenMarkovModels.jl
 
 As of 10/2017, the package implements:
-- A fairly complete set of methods for working with discrete hidden Markov models.
-- Basic Kalman filtering.
-- Experimental approximate nonlinear filtering algorithms via kernel filtering.
-The tentative scope of the package is simulation / nonlinear filtering / parameter estimation / latent state inference for hidden Markov models. I don't have as much time as I would like for growing the package. If you may be interested in (paid) work on this package, please don't hesitate to get in touch.
+- A fairly complete set of methods for working with discrete hidden Markov models: filtering, smoothing, maximum likelihood estimation via closed-form EM (aka. the Baum-Welch algorithm), Viterbi smoothing. 
+- Basic Kalman for linear Gaussian hidden Markov models: filtering, smoothing.
+- Proof-of-concept nonlinear filtering via kernel filtering.
 
-##Overview
+The tentative scope of the package is simulation / filtering / smoothing / parameter estimation / latent state inference for any type of hidden Markov models: discrete / continuous, linear / nonlinear, with or without feedback. So-called nonhomogeneous models (eg. Kalman filtering with time-dependent parameters) and control variables are out of scope. I don't have as much time as I would like for maintaining the package. If you may be interested in (paid) work on this package, please don't hesitate to get in touch.
 
-
-The package is organized around implicit interfaces: it defines abstract types such as `StrictHiddenMarkov` and implements methods such as `filtr(model::StrictHiddenMarkov,data,initial,technique::FilteringTechnique)`, relying on the user's implementation of the suitable methods for the given type, such as `randa(model::StrictHiddenMarkov,x)` to draw next period's random unobserved state x_t+1 given today's unobserved state x_t=x, and similarly for drawing an observation. 
-
-| Models / Algorithms | Filtering  | Smoothing | Backward Sampling | Viterbi | MLE | EM  |
-| ------------------- | ---------- | --------- | ----------------- | ------- | --- | --- |
-| Discrete            | X          | X         | X                 | X       | X   | X   |
-| LinearGaussian      | X          | X         |                   |         |     |     |
-| Strict              | KF, BF, PF |           |                   |         |     |     |
-| AR                  | KF, BF, PF |           |                   |         |     |     |
+## Overview
 
 
-##Usage
+The package is organized around implicit interfaces: it defines abstract types such as `StrictHiddenMarkov` and implements methods such as `filtr(model::StrictHiddenMarkov,data,initial,technique::FilteringTechnique)`. The `filtr` method will in turn rely on the user's implementation of the suitable methods for the given type, such as one-step-ahead simulations or density evaluations.
+
+
+| Models              | Filtering      | Smoothing | Viterbi           | Sampling | MLE | EM  |
+| ------------------- | -------------- | --------- | ----------------- | -------- | --- | --- |
+| Discrete            | X              | X         | X                 | X        | X   | X   |
+| LinearGaussian      | X              | X         |                   |          |     |     |
+| Strict              | KKF, KDF, PDF  |           |                   |          |     |     |
+| AR                  | KKF, KDF, PDF  |           |                   |          |     |     |
+
+
+## Usage
 
 Let's take a hidden Markov model with hidden/latent state x and emission/observed sate y. x can takes values 1,2, and y can take values 1, 2, 3. x has transition matrix A and y is drawn conditional on x according to the matrix B below:
 
@@ -53,3 +55,35 @@ estimating hidden Markov model via Baum-Welch algorithm...
 ~~~
 
 In this example it took 4.4 ms to compute the MLE from 10,000 time series observations. The heavy-lifting is done in the back-end package  [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
+
+
+
+## Nitty-Gritty
+
+
+Most filtering algorithms follow a recursive mutation-selection (or selection-mutation) strategy. This is simply because the true 
+
+
+| Algorithm name          | mutation           | selection          | fixed basis? |
+| ----------------------- | ------------------ | ------------------ | ------------ |
+| KKF, kernel filtering   | kernel Markov rule | kernel Bayes rule  | yes          |
+| KDF                     | kernel Markov rule | density evaluation | yes          |
+| PKF                     | particles          | kernel Bayes rule  | no           |
+| PDF, particle filtering | particles          | density evaluation | no           |
+
+
+| Hidden Markov structure | order              | R=  | Q            | M          |
+| ----------------------- | ------------------ | --- | ------------ | ---------- |
+| General                 | selection-mutation | MQ  | Q(X'|X,y,y') | f(y'|X,y)  |
+| Bootstrap               | mutation-selection | QM  | Q(X'|X,y)    | f(y'|X',y) |
+| AR                      | mutation-selection | QM  | Q(X'|X)      | f(y'|X',y) |
+| Strict                  | mutation-selection | QM  | Q(X'|X)      | f(y'|X')   |
+
+<!-- 
+| Models / Algorithms | Filtering  | Smoothing | Backward Sampling | Viterbi | MLE | EM  |
+| ------------------- | ---------- | --------- | ----------------- | ------- | --- | --- |
+| Discrete            | X          | X         | X                 | X       | X   | X   |
+| LinearGaussian      | X          | X         |                   |         |     |     |
+| Strict              | KF, BF, PF |           |                   |         |     |     |
+| AR                  | KF, BF, PF |           |                   |         |     |     |
+ -->

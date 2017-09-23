@@ -1,14 +1,26 @@
+struct DiscreteStrictHiddenMarkov <: StrictHiddenMarkovModel
+    qxx::Matrix{Float64}
+    qxy::Matrix{Float64}
+end
+
+
+draw_x(model::DiscreteStrictHiddenMarkov,x) = wsample(model.qxx[x,:])
+draw_y(model::DiscreteStrictHiddenMarkov,x) = wsample(model.qxy[y,:])
+
+
+
+
+
+
+
+#### "One-liner" filtering algorithm!
+
 struct DiscreteHiddenMarkovModel
     a::Matrix{Float64}
     b::Matrix{Float64}
 end
 
-
 dhmm(a,b)=DiscreteHiddenMarkovModel(a,b)
-
-
-
-
 
 function filtr(model::DiscreteHiddenMarkovModel,data,ini)
     T=length(data)

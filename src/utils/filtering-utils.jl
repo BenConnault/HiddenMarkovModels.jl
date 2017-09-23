@@ -1,8 +1,29 @@
 
 
 # API for common update functions 
-upq(mu,q)=vec(mu'*q)  # Markov kernel
-upf(mu,f)=normalize(mu.*f,1)  # Boltzman Gibbs update
+
+
+# Markov rule: nu = mu Q
+upq(mu,q)=vec(mu'*q)   #un-optimized
+
+upq!(nu,mu,q)=At_mul_B!(nu,q,mu)
+
+# Boltzman Gibbs update: nu = (mu.*f)/sum(mu.*f)
+upf(mu,f)=normalize(mu.*f,1)  #un-optimized
+
+function upf!(nu,mu,f)
+    n=length(nu)
+    acc=0.0
+    for i=1:n
+        nu[i] = mu[i]*f[i]
+        acc = acc + nu[i]
+    end
+    for i=1:n
+        nu[i] /= acc
+    end
+end
+
+
 upr(mu,r)=normalize(vec(mu'*r),1)  # positive operator
 
 

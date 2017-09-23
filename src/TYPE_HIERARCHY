@@ -1,0 +1,19 @@
+Concrete types are preceded by a (*)
+
+# TYPES FOR MODELS
+
+AbstractHiddenMarkovModel
+	StrictHiddenMarkov
+		*DiscreteStrictHiddenMarkov
+		*LinearGaussian
+
+
+# TYPES FOR FILTERING TECHNIQUES
+
+FilteringTechnique
+	KXF _(used for dispatching `initial_filter`)_
+		*KKF_SHM
+		*KDF_SHM
+	*DiscreteFilter
+	*KalmanFilter
+

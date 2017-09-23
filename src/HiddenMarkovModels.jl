@@ -86,9 +86,9 @@ include("utils/rkhs.jl")
 
 	using Kalman
 	include("models/abstract-hidden-markov.jl")
-	include("models/strict-hidden-markov.jl")
+	include("models/strict-hidden-markov.jl")   #including discrete
 	include("models/linear-gaussian.jl")
-	include("models/discrete.jl")
+	# include("models/discrete.jl")
 
 
 	export lgmodel, dhmm
@@ -96,14 +96,17 @@ include("utils/rkhs.jl")
 ### Kernel Filtering
 
 	include("filtering/generic-filter.jl")
-	include("filtering/kernel-filter.jl")
-	include("filtering/high-dim-kernel-filter.jl")
+	include("filtering/kalman-filter.jl")
 	include("filtering/particle-filter.jl")
-	include("filtering/basis-filter.jl")
+	# include("filtering/high-dim-kernel-filter.jl")   #TO ADAPT
+	# include("filtering/kernel-density-filter.jl")    #TO ADAPT
+	
+	# include("filtering/kernel-filter.jl")
 	# include("kernelfiltering/altfiltering.jl")
 
-	export StrictHiddenMarkovModel
-	export KF, PF, BF, LRKF, LRBF
+	export StrictHiddenMarkov
+	export KKF, PF
+	# , BF, LRKF, LRBF
 	export filtr
 
 end
