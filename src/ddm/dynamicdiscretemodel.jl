@@ -20,12 +20,12 @@ end
 
 
 
-# import StatsBase.StatisticalModel
-# using Optim
+########################################################################################################
+###
+########################################################################################################
 
-# import Distributions: loglikelihood, dim
 
-# export coef!, coef_jac!, rand, loglikelihood, loglikelihood_jac, dim, mle
+
 
 ### INTERFACE
 # # fall-back error messages. This is a way of enforcing the interface.

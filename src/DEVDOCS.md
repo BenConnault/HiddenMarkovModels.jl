@@ -2,17 +2,18 @@
 
 Concrete types are preceded by a (*)
 
-TYPES FOR MODELS
+Types for models
 
 ~~~
-AbstractHiddenMarkovModel
+HiddenMarkovModel
 	StrictHiddenMarkov
 		*DiscreteStrictHiddenMarkov
 		*LinearGaussian
+DynamicDiscreteModel
 ~~~
 
 
-TYPES FOR FILTERING TECHNIQUES
+Types for filtering techniques
 
 ~~~
 FilteringTechnique

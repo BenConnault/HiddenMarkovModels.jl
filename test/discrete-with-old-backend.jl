@@ -42,7 +42,7 @@ end
 
 theta2eta(theta::Tuple)=[log(theta[1]/(1-theta[1])),log(theta[2]/(1-theta[2]))]
 eta2theta(eta::Array)=(exp(eta[1])/(1+exp(eta[1])),exp(eta[2])/(1+exp(eta[2])))
-HMM.coef!(model::TestModel,eta::Array)=coef!(model,eta2theta(eta))
+HMM.coef!(model::TestModel,eta::Array)=HMM.coef!(model,eta2theta(eta))
 
 HMM.dim(model::TestModel)=2
 
@@ -79,21 +79,17 @@ model=testmodel()
 
 HMM.coef!(model,theta0)
 data=rand(model,100,100)
-HMM.loglikelihood(model,data)
 
-# thetahat=HiddenMarkovModels.eta2theta(mle(model,data))
-# thetahat2=HiddenMarkovModels.eta2theta(em(model,data))
-# @test norm(collect(thetahat)-collect(thetahat2))<1e-3
 
 
 ### JACOBIANS
 
 using Calculus
 
+
 data=rand(model,10)
 eta0=HiddenMarkovModels.theta2eta(theta0)
 @test norm(vec(Calculus.gradient(eta -> HMM.loglikelihood(model,data,eta),eta0))-vec(HMM.loglikelihood_jac(model,data,eta0)[2])) < 1e-5
-
 data=rand(model,10,100)
 eta0=HiddenMarkovModels.theta2eta(theta0)
 @test norm(vec(Calculus.gradient(eta -> HMM.loglikelihood(model,data,eta),eta0))-vec(HMM.loglikelihood_jac(model,data,eta0)[2])) < 1e-5

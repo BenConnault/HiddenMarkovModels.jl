@@ -26,7 +26,7 @@ include("utils/rkhs.jl")
 
 # include("utils/kde.jl")
 
-export coef!, loglikelihood
+export loglikelihood
 
 ### "Dynamic Discrete Model" back-end
 

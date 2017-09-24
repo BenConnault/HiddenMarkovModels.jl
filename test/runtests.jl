@@ -6,4 +6,5 @@ println("hi")
 
 # include("utils.jl")
 include("discrete-with-old-backend.jl")
+include("discrete.jl")
 include("linear-gaussian-models.jl")
