@@ -1,8 +1,8 @@
-abstract type AbstractHiddenMarkovModel end
+abstract type HiddenMarkovModel end
 
 
 ######################################################################################
-### Implicit interface that all AbstractHiddenMarkovModels must implement
+### Implicit interface that all HiddenMarkovModels must implement
 ######################################################################################
 
 ## FIELDS
@@ -17,10 +17,10 @@ abstract type AbstractHiddenMarkovModel end
 
 
 ######################################################################################
-### Methods common to all AbstractHiddenMarkovModel
+### Methods common to all HiddenMarkovModel
 ######################################################################################
 
-function rand{Tx,Ty}(model::AbstractHiddenMarkovModel,initial::Tuple{Tx,Ty},T::Int)
+function rand{Tx,Ty}(model::HiddenMarkovModel,initial::Tuple{Tx,Ty},T::Int)
     xx=Vector{Tx}(T)
     yy=Vector{Ty}(T)
     xx[1]=initial[1]
@@ -55,7 +55,7 @@ end
 
 
 
-# THIS NEEDS TO BE CLEANED UP: no all AbstractHiddenMarkovModels call rand(model,flag,x)
+# THIS NEEDS TO BE CLEANED UP: no all HiddenMarkovModels call rand(model,flag,x)
 # This works only for continuous models where each observation is different (does it?)
 # to do: make the kernel `kk` an option, maybe by adding `model` as an argument
 function markovapprox(model,flag,bxx,byy,ky,m=1000,tol=0.1)
@@ -76,5 +76,5 @@ function markovapprox(model,flag,bxx,byy,ky,m=1000,tol=0.1)
     q
 end
 
-rand(model::AbstractHiddenMarkovModel,flag::Val{:x},x) = draw_x(model,x)
-rand(model::AbstractHiddenMarkovModel,flag::Val{:y},x) = draw_y(model,x)
+rand(model::HiddenMarkovModel,flag::Val{:x},x) = draw_x(model,x)
+rand(model::HiddenMarkovModel,flag::Val{:y},x) = draw_y(model,x)

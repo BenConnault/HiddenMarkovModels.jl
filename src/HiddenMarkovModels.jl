@@ -6,7 +6,7 @@ using Distributions: wsample
 
 # For extending   
 using  StatsBase
-import StatsBase: loglikelihood   # loglikelihood
+import StatsBase: loglikelihood 
 import Base: rand
 # using Base: rand, norm, length
 
@@ -24,11 +24,8 @@ include("utils/distances.jl")
 include("utils/filtering-utils.jl")
 include("utils/rkhs.jl")
 
-# include("utils/kde.jl")
 
-export loglikelihood
-
-### "Dynamic Discrete Model" back-end
+### Legacy "Dynamic Discrete Model" back-end
 
 	include("ddm/dynamicdiscretemodel.jl")  # `DynamicDiscreteModel`
 	include("ddm/simulate.jl")              # `rand`
@@ -40,40 +37,30 @@ export loglikelihood
 	include("ddm/toymodel.jl")				#Useful for testing and examples.	
 	include("ddm/dhmm.jl")					# a thin layer on top of the "Dynamic Discrete Model" back-end, all previous functions
 
-	export 	em, viterbi, filtr, baumwelch, hmm, theta2ab
-
-### Models
+### Core methods
 
 	include("models/abstract-hidden-markov.jl")
-	include("models/strict-hidden-markov.jl")   #including discrete
-
-	# using Kalman
+	include("models/discrete.jl")
+	include("models/strict-hidden-markov.jl")  
 	include("models/linear-gaussian.jl")
-	# include("models/discrete.jl")
-
-
-	# export lgmodel, dhmm
-
-### Filtering
-
 	include("filtering/generic-filter.jl")
 	include("filtering/kalman-filter.jl")
 	include("filtering/particle-filter.jl")
 	# include("filtering/high-dim-kernel-filter.jl")   #TO ADAPT
 	# include("filtering/kernel-density-filter.jl")    #TO ADAPT
-	
-	export StrictHiddenMarkov
-	export KKF, PF
-	# , BF, LRKF, LRBF
-	export filtr
 
-
+	export HiddenMarkovModels, LinearGaussianHMM, DiscreteHMM    	    # model types
+	export KKF														    # filtering techniques
+	export filtr, loglikelihood, filter_smoother, eweights!             # methods
+	export viterbi, em
 
 ### Commented out
 
 	# importall JuMP, Ipopt
 	# include("utils/wasserstein.jl")   # needs external optimization package
     # using HiddenMarkovModels: wasserstein, dwasserstein
+
+	# include("utils/kde.jl")    # experimental rkhs-based kde and ckde
 
 end
 

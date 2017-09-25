@@ -6,10 +6,11 @@ Types for models
 
 ~~~
 HiddenMarkovModel
-	StrictHiddenMarkov
-		*DiscreteStrictHiddenMarkov
+	DiscreteHMM
+	StrictHMM
 		*LinearGaussian
 DynamicDiscreteModel
+	*DHMM
 ~~~
 
 

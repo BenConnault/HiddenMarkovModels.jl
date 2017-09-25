@@ -1,36 +1,130 @@
-struct DiscreteStrictHiddenMarkov <: StrictHiddenMarkovModel
-    qxx::Matrix{Float64}
-    qxy::Matrix{Float64}
+######################################################################################
+### Implementation of the HiddenMarkovModel interface
+######################################################################################
+
+abstract type DiscreteHMM <: HiddenMarkovModel
 end
 
 
-draw_x(model::DiscreteStrictHiddenMarkov,x) = wsample(model.qxx[x,:])
-draw_y(model::DiscreteStrictHiddenMarkov,x) = wsample(model.qxy[y,:])
+######################################################################################
+### Implicit interface that all DiscreteHMM's must implement
+######################################################################################
+
+## FIELDS
+
+# (no fields)
+
+## METHODS
+
+## (i) passed on from AbstractHiddenMarkovModel:
+
+### Sample one step ahead starting at today's z=(x,y) 
+# rand{S1,S2}(model::StrictHiddenMarkovModel,xy::Tuple{S1,S2})
+
+## (ii) new methods:
+
+### evaluate the transition matrix Q[x,y,x',y']=Q(x',y'|x,y)
+qxyxy(model::DiscreteHMM,x,y,x2,y2) = error("no method qxyxy!(model::$(typeof(model)),x,y,x2,y2)")
 
 
+######################################################################################
+### Methods common to all DiscreteHMM's
+######################################################################################
 
+#Should I try and make this type-stable?
+# function _filtr{F}(model::DiscreteHMM{F},ini_filter,data)
 
-
-
-
-#### "One-liner" filtering algorithm!
-
-struct DiscreteHiddenMarkovModel
-    a::Matrix{Float64}
-    b::Matrix{Float64}
-end
-
-dhmm(a,b)=DiscreteHiddenMarkovModel(a,b)
-
-function filtr(model::DiscreteHiddenMarkovModel,data,ini)
+function _filtr(model::DiscreteHMM,ini_filter,data)
     T=length(data)
-    nx=length(ini)
-    fil=Array{Float64}(nx,T)
-    fil[:,1]=ini
-    for t=2:T
-        fil[:,t]=upf(upq(fil[:,t-1],model.a),model.b[:,data[t]])
+    nx = length(ini_filter)
+
+    el_type = eltype(qxyxy(model,1,1,1,1))
+
+    fil=Array{el_type}(nx,T)   #Does it need to be Float64?
+    fil[:,1]=ini_filter
+    llk = 0.
+
+    print("Running the discrete filter... ")
+    for t=1:T-1
+        rho=0.0
+        for jx=1:nx
+            fil[jx,t+1]=0.
+            for ix=1:nx
+                fil[jx,t+1] += qxyxy(model,ix,data[t],jx,data[t+1])*fil[ix,t]
+            end
+            rho += fil[jx,t+1]
+        end
+        for jx=1:nx
+            fil[jx,t+1] /= rho
+        end
+        llk += log(rho)
     end
+    println()
+    fil,llk/T
+end
+
+filtr(model::DiscreteHMM,ini_filter,data)=_filtr(model,ini_filter,data)[1]
+loglikelihood(model::DiscreteHMM,ini_filter,data)=_filtr(model,ini_filter,data)[2]
+
+
+function _smoother(model::DiscreteHMM,fil,data)
+    nx,T = size(fil)
+    smo  = Array{Float64}(nx,T)
+
+    smo[:,T]=1.
+
+    print("Running the discrete smoother... ")
+    for t=T-1:-1:1
+        rho=0.0
+        for ix=1:nx
+            smo[ix,t] = 0
+            for jx=1:nx
+                smo[ix,t] += qxyxy(model,ix,data[t],jx,data[t+1])*smo[jx,t+1]
+            end
+            rho += smo[ix,t]
+        end
+        for ix=1:nx
+            smo[ix,t] /= rho
+        end
+    end
+    println()
+    smo
+end
+
+function filter_smoother(model::DiscreteHMM,ini_filter,data)
+    fil,llk = _filtr(model,ini_filter,data)
+    smo = _smoother(model,fil,data)
+    fil,smo
+end
+
+# This is inefficient for those models where many (y,y') pairs are not observed.
+function eweights!(w,model::DiscreteHMM,ini_filter,data)
+    fil,llk = _filtr(model,ini_filter,data)
+    smo = _smoother(model,fil,data)
+    nx,T = size(fil)
+
+    conditional=Array{Float64}(nx,nx)
+    print("Running the discrete smoother... ")
+    for t=1:T-1
+        tempsum=0.0
+        for jx=1:nx
+            for ix=1:nx
+                conditional[ix,jx]=qxyxy(model,ix,data[t],jx,data[t+1])
+                conditional[ix,jx]*=fil[ix,t]
+                conditional[ix,jx]*=smo[jx,t+1]
+                tempsum+=conditional[ix,jx]
+            end
+        end
+        for jx=1:nx
+            for ix=1:nx
+                #note that there is no risk of division by zero 
+                #reason: this is called only on _observed_ data which must thus have non-zero probability
+                w[ix,data[t],jx,data[t+1]]+=conditional[ix,jx]/tempsum
+            end
+        end
+    end
+    println()
+
     fil
 end
-
 

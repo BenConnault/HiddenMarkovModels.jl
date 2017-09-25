@@ -1,4 +1,4 @@
-type HiddenMarkovModel <: DynamicDiscreteModel
+type DHMM <: DynamicDiscreteModel
 	#HMM specific field
 
 	#DynamicDiscreteModel fields
@@ -41,36 +41,36 @@ function hmm2ddm!(model::DynamicDiscreteModel,a,b,ajac,bjac)
 	end
 end
 
-function hmm(ab::Tuple,mu)
+function dhmm(ab::Tuple,mu)
 	a,b=ab
 	dx,dy=size(mu)
-	model=HiddenMarkovModel(Array{Float64}(dx,dy,dx,dy),mu,Array{Float64}(1),Array{Float64}(dx),Array{Float64}(dx))
+	model=DHMM(Array{Float64}(dx,dy,dx,dy),mu,Array{Float64}(1),Array{Float64}(dx),Array{Float64}(dx))
 	hmm2ddm!(model,a,b)
 	model
 end
 
 #default initial distribution uniform
-function hmm(ab::Tuple)
+function dhmm(ab::Tuple)
 	dx,dy=size(ab[2])
 	mu=fill(1/(dx*dy),dx,dy)
-	hmm(ab,mu)
+	dhmm(ab,mu)
 end
 
 #ab=(a,b) parametrization
-coef!(model::HiddenMarkovModel,ab::Tuple)=hmm2ddm!(model,ab[1],ab[2])
+coef!(model::DHMM,ab::Tuple)=hmm2ddm!(model,ab[1],ab[2])
 
 #canonical parametrization in case someone wants to apply mle() to it
-coef!(model::HiddenMarkovModel,theta::Array{Float64,1})=coef!(model,theta2ab(theta,size(model.mu,1)))
+coef!(model::DHMM,theta::Array{Float64,1})=coef!(model,theta2ab(theta,size(model.mu,1)))
 
 theta2ab(theta::Array{Float64,1},dx::Int)=(z2q(theta[1:dx*(dx-1)]),z2q(theta[dx*(dx-1)+1:end],dx))
 
-function dim(model::HiddenMarkovModel)
+function dim(model::DHMM)
 	dx,dy=size(model.mu)
 	dx*(dx-1)+dx*(dy-1)
 end
 
 
-function em(model::HiddenMarkovModel,data)
+function em(model::DHMM,data)
 	dx,dy=size(model.mu)
 	w=zeros(dx,dy,dx,dy)
 	estep(model,data,w)	
@@ -83,4 +83,4 @@ function em(model::HiddenMarkovModel,data)
 	(a,b)
 end	
 
-baumwelch=em
+baum_welch=em

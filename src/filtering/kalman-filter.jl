@@ -1,6 +1,8 @@
 
 
-function _filtr(model::LinearGaussian,data,ini,filtering_method::KalmanFilter)
+#
+# ini:  (ini_mean,ini_vcov) where mu(x_1|y_1) ~ N(ini_mean,ini_vcov)
+function _filtr(model::LinearGaussianHMM,ini,data,filtering_method::KalmanFilter)
     T=length(data)
 
     ini_mean,ini_vcov = ini

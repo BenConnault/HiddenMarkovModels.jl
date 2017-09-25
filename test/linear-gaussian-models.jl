@@ -25,9 +25,9 @@ true_filter_vcov=reshape([
 1.0  0.420565  0.36862   0.362919  0.362281
 ],2,2,T)
 
-linear_gaussian_model = HMM.LinearGaussian(axx,sqrtvxx,axy,sqrtvxy)
+linear_gaussian_model = LinearGaussianHMM(axx,sqrtvxx,axy,sqrtvxy)
 ini_filter = (ini_filter_mean, ini_filter_vcov)
-filter_mean, filter_vcov = filtr(linear_gaussian_model,data,ini_filter)
+filter_mean, filter_vcov = filtr(linear_gaussian_model,ini_filter,data)
 
 ini_xy  = (zeros(2),zeros(2))
 xx, yy  = rand(linear_gaussian_model,ini_xy,T)

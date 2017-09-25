@@ -1,3 +1,13 @@
+######################################################################################
+### Testing legacy code from a previous version (cf. src/ddm/).
+###   - useful for testing
+###   - useful for performance comparisons
+###   - includes as-of-yet (10/2017) unported code: closed-form jacobians and Viterbi filtering
+### Requires ForwardDiff and Calculus
+######################################################################################
+
+
+
 import ForwardDiff
 
 type TestModel <: HMM.DynamicDiscreteModel
@@ -104,7 +114,7 @@ eta0=HiddenMarkovModels.theta2eta(theta0)
 a=[.4 .6; .3 .7]
 b=[.3 .1 .6; .5 .2 .3]
 data=[1,2,3]
-model=hmm((a,b))
+model=HMM.dhmm((a,b))
 
 function naiveprob(data)
     fil=transpose(model.mu[:,data[1]])

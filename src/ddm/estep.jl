@@ -17,7 +17,7 @@ function estep(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{Float64,4
 	T=length(data)
 	dx,dy=size(model.mu)
 
-	filter=Array(Float64,dx,T)
+	filter=Array{Float64}(dx,T)
 	filter[:,1]=model.mu[:,data[1]]/sum(model.mu[:,data[1]])
 	for t=2:T
 		rho=0.0
@@ -33,7 +33,7 @@ function estep(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{Float64,4
 		end
 	end
 
-	smoother=Array(Float64,dx,T)
+	smoother=Array{Float64}(dx,T)
 	smoother[:,T]=1
 	for t=T-1:-1:1
 		rho=0.0
@@ -49,7 +49,7 @@ function estep(model::DynamicDiscreteModel,data::Array{Int,1},w::Array{Float64,4
 		end
 	end
 
-	conditional=Array(Float64,dx,dx)
+	conditional=Array{Float64}(dx,dx)
 	for t=1:T-1
 		tempsum=0.0
 		for jx=1:dx

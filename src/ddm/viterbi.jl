@@ -7,7 +7,7 @@ function viterbi(model::DynamicDiscreteModel,data::Array{Int,1})
 	T=length(data)
 	dx=size(model.mu,1)
 
-	memory=Array(Int,dx,T-1)
+	memory=Array{Int}(dx,T-1)
 
 	model.psi[:]=model.mu[:,data[1]]/sum(model.mu[:,data[1]])
 	for t=2:T
@@ -17,7 +17,7 @@ function viterbi(model::DynamicDiscreteModel,data::Array{Int,1})
 		end
 		model.psi[:]=model.psi/sum(model.psi)
 	end
-	viterbipath=Array(Int,T)
+	viterbipath=Array{Int}(T)
 	viterbipath[T]=indmax(model.psi)
 	for t=T-1:-1:1
 		viterbipath[t]=memory[viterbipath[t+1],t]
@@ -28,7 +28,7 @@ end
 #wrapper for panel data
 function viterbi(model::DynamicDiscreteModel,data::Vector{Vector{Int}})
 	n=length(data)
-	viterbipaths=Array(Array{Int,1},n)
+	viterbipaths=Array{Array{Int,1}}(n)
 	for i=1:n
 		viterbipaths[i]=viterbi(model,data[i])
 	end
