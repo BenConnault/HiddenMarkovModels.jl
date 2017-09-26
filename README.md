@@ -1,6 +1,9 @@
 # HiddenMarkovModels.jl
 
-A Julia package for probability and statistics with hidden Markov models.   
+A Julia package for probability and statistics with hidden Markov models.
+
+As a simple illustration, suppose an unobserved variable `x_t` evolves as a relatively persistent AR(1), and we observe `y_t = censor(x_t + noise)` where `censor(x)` is =-1 if `x<-1`, `=x` if `-1<x<1` and =1 if `x>1`. We can track our best guess of where `x_t` is as `y_t` evolves through time by using the `filtr()` method of the package (plotted below for one particular time-series realization). When `y_t` stays out of the [-1,1] observation window for a long period of time, the uncertainty as to the position of `x_t` increases quickly, as witnessed by the width of the 95\% probability interval. When `y_t` finally falls back inside the [-1,1] observation window, our best guess gets much better, similar to what a Kalman filter would tell us for a non-censore version of this AR(1) + noise.
+
 
 
 ![nonlinear filtering for a censored AR(1)](examples/banner.png)
@@ -17,6 +20,7 @@ As of 10/2017, the package implements:
 The tentative scope of the package includes:
 - simulation, filtering / smoothing, latent state inference, likelihood evaluations, EM-algorithm helpers.
 - any type of hidden Markov models: discrete / continuous, linear / nonlinear, with / without feedback. 
+
 Out-of-scope are:
 - parameter estimation, ie. likelihood _maximization_. The package does provide all the tools needed for MLE implementation using an external optimization package (including loglikelihood evaluations compatible with automatic differentiation), but in order to keep the package focused and a lean REQUIRE file, we leave this responsibility to the user. 
 - so-called nonhomogeneous models (eg. Kalman filtering with time-dependent parameters).
