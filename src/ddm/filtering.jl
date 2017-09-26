@@ -18,22 +18,28 @@ function filtr(model::DynamicDiscreteModel,data::Array{Int,1})
 		end
 	end
 
-	smoother=Array{Float64}(dx,T)
-	smoother[:,T]=1
+	# backward "smoothing" via the 2-filter formula.
+	# `backward` stores p(y_{t+1:T}|y_t,x_t) and NOT the smoother p(x_t|y_{1:T}) 
+	# however the smoother can be read off as the marginal of conditional below
+	backward=Array{Float64}(dx,T)
+	backward[:,T]=1
 	for t=T-1:-1:1
 		rho=0.0
 		for ix=1:dx
-			smoother[ix,t]=0
+			backward[ix,t]=0
 			for jx=1:dx
-				smoother[ix,t]+=model.m[ix,data[t],jx,data[t+1]]*smoother[jx,t+1]
+				backward[ix,t]+=model.m[ix,data[t],jx,data[t+1]]*backward[jx,t+1]
 			end
-			rho+=smoother[ix,t]
+			rho+=backward[ix,t]
 		end
 		for ix=1:dx
-			smoother[ix,t]/=rho
+			backward[ix,t]/=rho
 		end
 	end
 
+
+	# conditional[:,:,t] stores p(x_{t+1},x_t| y_{1:T})
+	# conditional[:,:,T] is uninitialized -- garbage
 	conditional=Array{Float64}(dx,dx,T)
 	for t=1:T-1
 		tempsum=0.0
@@ -41,7 +47,7 @@ function filtr(model::DynamicDiscreteModel,data::Array{Int,1})
 			for ix=1:dx
 				conditional[ix,jx,t]=model.m[ix,data[t],jx,data[t+1]]
 				conditional[ix,jx,t]*=filter[ix,t]
-				conditional[ix,jx,t]*=smoother[jx,t+1]
+				conditional[ix,jx,t]*=backward[jx,t+1]
 				tempsum+=conditional[ix,jx,t]
 			end
 		end
@@ -53,5 +59,5 @@ function filtr(model::DynamicDiscreteModel,data::Array{Int,1})
 			end
 		end
 	end
-	filter,smoother,conditional
+	filter,backward,conditional
 end

@@ -62,16 +62,19 @@ function filterstep!(model::DynamicDiscreteModel,iy,jy)
 end
 
 function loglikelihood(model::DynamicDiscreteModel,data::Array{Int,1})
-	lambda=log(sum(model.mu[:,data[1]]))				#log-normalization factor for numerical stability
+	llk = 0.0
+
+	### if you want to compute log p(y_{1:T}) rather than log p(y_{2:T}|y_1), uncomment:
+	# llk=log(sum(model.mu[:,data[1]]))				
 
 	model.psi[:]=model.mu[:,data[1]]/sum(model.mu[:,data[1]])		#actual filter
 	model.rho[1]=1
 
 	for t=2:length(data)
 		filterstep!(model,data[t-1],data[t])
-		lambda+=log(model.rho[1])
+		llk+=log(model.rho[1])
 	end
-	lambda/length(data)
+	llk/length(data)
 end
 
 

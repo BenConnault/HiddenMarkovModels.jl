@@ -44,7 +44,7 @@ function _filtr(model::DiscreteHMM,ini_filter,data)
     fil[:,1]=ini_filter
     llk = 0.
 
-    print("Running the discrete filter... ")
+    print("Running discrete filter... ")
     for t=1:T-1
         rho=0.0
         for jx=1:nx
@@ -64,16 +64,58 @@ function _filtr(model::DiscreteHMM,ini_filter,data)
 end
 
 filtr(model::DiscreteHMM,ini_filter,data)=_filtr(model,ini_filter,data)[1]
+
+"""
+    loglikelihood(model::DiscreteHMM,ini_filter,data)
+
+Return the conditional log-likelihood ``log p(y_{2:T}|y_1)``. 
+`ini_filter` contains the initial filter ``p(x_1|y_1)``.
+"""
 loglikelihood(model::DiscreteHMM,ini_filter,data)=_filtr(model,ini_filter,data)[2]
 
 
 function _smoother(model::DiscreteHMM,fil,data)
     nx,T = size(fil)
+
+    el_type = eltype(qxyxy(model,1,1,1,1))
+
+
+    smo = Array{Float64}(nx,T)  # stores p(X_t | y_{1:T})
+    joi = Array{Float64}(nx,nx,T-1)  # joi[:,:,t] stores p(X_t X_t+1 | y_{1:T})  
+    # storing a (nx x nx) matrix is not strictly necessary: 
+    #    - we could loop over the columns of `cod`, ie over x_{t+1} = jx for more efficient pure smoothing
+    #    - however here we also get the eweights
+
+
+    smo[:,T]=view(fil,:,T)
+
+    print("Running discrete smoother... ")
+    for t=T-1:-1:1
+        for jx=1:nx
+            rho = 0.0
+            for ix=1:nx
+                joi[ix,jx,t] = qxyxy(model,ix,data[t],jx,data[t+1])*fil[ix,t]
+                rho += joi[ix,jx,t]
+            end
+            w = smo[jx,t+1]/rho
+            for ix=1:nx
+                joi[ix,jx,t] *= w
+                smo[ix,t]    += joi[ix,jx,t]
+            end
+        end
+    end
+    println()
+    smo, joi
+end
+
+
+function _two_filter(model::DiscreteHMM,fil,data)
+    nx,T = size(fil)
     smo  = Array{Float64}(nx,T)
 
     smo[:,T]=1.
 
-    print("Running the discrete smoother... ")
+    print("Running discrete two-filter formula... ")
     for t=T-1:-1:1
         rho=0.0
         for ix=1:nx
@@ -92,39 +134,18 @@ function _smoother(model::DiscreteHMM,fil,data)
 end
 
 function filter_smoother(model::DiscreteHMM,ini_filter,data)
-    fil,llk = _filtr(model,ini_filter,data)
-    smo = _smoother(model,fil,data)
+    fil, llk = _filtr(model,ini_filter,data)
+    smo, joi = _smoother(model,fil,data)
     fil,smo
 end
 
-# This is inefficient for those models where many (y,y') pairs are not observed.
-function eweights!(w,model::DiscreteHMM,ini_filter,data)
-    fil,llk = _filtr(model,ini_filter,data)
-    smo = _smoother(model,fil,data)
-    nx,T = size(fil)
 
-    conditional=Array{Float64}(nx,nx)
-    print("Computing E-step weights for discrete model... ")
-    for t=1:T-1
-        tempsum=0.0
-        for jx=1:nx
-            for ix=1:nx
-                conditional[ix,jx]=qxyxy(model,ix,data[t],jx,data[t+1])
-                conditional[ix,jx]*=fil[ix,t]
-                conditional[ix,jx]*=smo[jx,t+1]
-                tempsum+=conditional[ix,jx]
-            end
-        end
-        for jx=1:nx
-            for ix=1:nx
-                #note that there is no risk of division by zero 
-                #reason: this is called only on _observed_ data which must thus have non-zero probability
-                w[ix,data[t],jx,data[t+1]]+=conditional[ix,jx]/tempsum
-            end
-        end
-    end
-    println()
 
-    fil
-end
+# function eweights!(w,model::DiscreteHMM,ini_filter,data)
+#     fil, llk = _filtr(model,ini_filter,data)
+#     smo, joi = _smoother(model,fil,data)
+#     nx,T = size(fil)
+
+#     joi
+# end
 

@@ -116,21 +116,12 @@ b=[.3 .1 .6; .5 .2 .3]
 data=[1,2,3]
 model=HMM.dhmm((a,b))
 
-function naiveprob(data)
-    fil=transpose(model.mu[:,data[1]])
-    for t=2:length(data)
-        fil=sum(fil*view(model.m,:,data[t-1],:,data[t]),1)
-    end
-    sum(fil)
-end
 
 @test vec(sum(model.m,(3,4)))≈fill(1,6) 
 @test reshape(sum(view(model.m,:,1,:,:),3),2,2)≈a
-@test HMM.loglikelihood(model,data)≈log(naiveprob(data))/length(data)
 data=Vector{Vector{Int}}(2)
 data[1]=[1,2,3]
 data[2]=[3,2,1]
-@test loglikelihood(model,data)≈(log(naiveprob(data[1]))/length(data[1])+log(naiveprob(data[2]))/length(data[2]))/2
 
 viterbi(model,data)
 

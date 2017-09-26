@@ -1,6 +1,7 @@
 ######################################################################################
 ### So far the generic filter here is common to all algorithms working "in a basis".
-### This includes discrete filters, kernel-kernel filters, and kernel-density filters.
+### This includes kernel-kernel filters and kernel-density filters
+### (as well as discrete filters, although those have an alternative specialized routine).
 ### With some more work it can probably be made to work for particle filtering and Kalman filtering.
 ######################################################################################
 
