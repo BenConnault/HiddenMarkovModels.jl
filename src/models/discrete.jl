@@ -109,30 +109,6 @@ function _smoother(model::DiscreteHMM,fil,data)
 end
 
 
-function _two_filter(model::DiscreteHMM,fil,data)
-    nx,T = size(fil)
-    smo  = Array{Float64}(nx,T)
-
-    smo[:,T]=1.
-
-    print("Running discrete two-filter formula... ")
-    for t=T-1:-1:1
-        rho=0.0
-        for ix=1:nx
-            smo[ix,t] = 0
-            for jx=1:nx
-                smo[ix,t] += qxyxy(model,ix,data[t],jx,data[t+1])*smo[jx,t+1]
-            end
-            rho += smo[ix,t]
-        end
-        for ix=1:nx
-            smo[ix,t] /= rho
-        end
-    end
-    println()
-    smo
-end
-
 function filter_smoother(model::DiscreteHMM,ini_filter,data)
     fil, llk = _filtr(model,ini_filter,data)
     smo, joi = _smoother(model,fil,data)

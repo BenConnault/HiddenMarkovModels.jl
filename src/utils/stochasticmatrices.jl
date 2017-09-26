@@ -1,6 +1,6 @@
-
-
-# line(x::AbstractArray)=reshape(x,1,length(x))
+######################################################################################
+### Working with general stochastic matrices from E1 to E2
+######################################################################################
 
 # Normalize Stochastic Matrix
 nsm(q) = q./sum(q,2)
@@ -23,15 +23,45 @@ function rssm(dim::Int,density=.2)
 	sparse(m./sum(m,2))	
 end
 
+######################################################################################
+### Working with stochastic matrices from E1 to E1 -- Markov transtion matrices
+######################################################################################
+
+
 
 stationary(q)=stationaryt(q')
 
 function stationaryt(tq::Array{Float64,2})
-	n=size(tq)[1]
-	v=tq[1:n-1,n]
-	p=((tq[1:n-1,1:n-1].-v)-eye(n-1))\-v
+	nx=size(tq,1)
+	@assert sum(tq.<0) ==0 
+	@assert norm(vec(sum(tq,1)) - ones(nx)) < 1e^3 
+
+	v=tq[1:nx-1,nx]
+	p=((tq[1:nx-1,1:nx-1].-v)-eye(nx-1))\-v
 	vcat(p,1-sum(p))
 end
+
+
+function stationary(model::DiscreteHMM,nx,ny,m=1)
+	nz  = nx*ny
+	qzz = reshape([qxyxy(model,ix,iy,jx,jy) for ix=1:nx,iy=1:ny,jx=1:nx,jy=1:ny],nz,nz)
+	piz = stationary(qzz)
+	joint_z  = reshape(transpose(piz),1,ny,nx)   #joint_z[y_{1:t-1},y_t,x_t]
+	qq  = reshape(qzz,nx,ny,nx,ny)
+	nyy = 1
+	for i = 2:m
+		temp = zeros(nyy,ny,ny,nx)
+		for iy=1:ny	
+			for jy=1:ny	
+				A_mul_B!(view(temp,:,iy,jy,:),view(joint_z,:,iy,:),view(qq,:,iy,:,jy))
+			end
+		end
+		nyy = nyy*ny
+		joint_z = reshape(temp,nyy,ny,nx)
+	end
+	sum(joint_z,2)
+end
+
 
 doc"""
     dobrushin(q)
@@ -51,8 +81,10 @@ function dobrushin(q)
 end
 
 
-# REPARAMETRIZATION
-# frequently useful when optimizing over a stochastic matrix
+######################################################################################
+### Frequently useful reparametrizations with jacobians
+######################################################################################
+
 
 
 #assumes q is square

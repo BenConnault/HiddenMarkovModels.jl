@@ -11,15 +11,6 @@ import Base: rand
 # using Base: rand, norm, length
 
 
-include("utils/stochasticmatrices.jl")
-### cheap export: copy-paste in your workspace the line below if you want to use the internal methods
-# using HiddenMarkovModels: rsm   
-
-include("utils/tensors.jl")
-# using HiddenMarkovModels: ei, vecpq, opnorm, partialtrace, rortho
-
-include("utils/distances.jl")
-# using HiddenMarkovModels: dhilbert, dtv
 
 include("utils/filtering-utils.jl")
 include("utils/rkhs.jl")
@@ -52,15 +43,12 @@ include("utils/rkhs.jl")
 	export HiddenMarkovModels, LinearGaussianHMM, DiscreteHMM    	    # model types
 	export KKF														    # filtering techniques
 	export filtr, loglikelihood, filter_smoother, eweights!             # methods
-	export viterbi, em
+	export viterbi
 
-### Commented out
+include("utils/stochasticmatrices.jl")
+include("utils/tensors.jl")
+include("utils/distances.jl")
 
-	# importall JuMP, Ipopt
-	# include("utils/wasserstein.jl")   # needs external optimization package
-    # using HiddenMarkovModels: wasserstein, dwasserstein
-
-	# include("utils/kde.jl")    # experimental rkhs-based kde and ckde
 
 end
 
