@@ -1,95 +1,46 @@
 # HiddenMarkovModels.jl
 
-![nonlinear filtering for a truncated AR(1)](examples/banner.png)
+A Julia package for probability and statistics with hidden Markov models.   
 
+
+![nonlinear filtering for a censored AR(1)](examples/banner.png)
+_nonlinear filtering for a censored AR(1) model_  
 
 
 
 
 As of 10/2017, the package implements:
-- A fairly complete set of methods for working with discrete hidden Markov models: filtering, smoothing, maximum likelihood estimation via closed-form EM (aka. the Baum-Welch algorithm), Viterbi smoothing. 
-- Basic Kalman for linear Gaussian hidden Markov models: filtering, smoothing.
+- A fairly complete set of methods for working with discrete hidden Markov models: filtering, smoothing, Viterbi smoothing, likelihood evaluations, maximum likelihood estimation via closed-form EM (aka. the Baum-Welch algorithm), . 
+- Basic Kalman filtering for linear Gaussian hidden Markov models: filtering, smoothing.
 - Proof-of-concept nonlinear filtering via kernel filtering.
 
-The tentative scope of the package is simulation / filtering / smoothing / parameter estimation / latent state inference for any type of hidden Markov models: discrete / continuous, linear / nonlinear, with or without feedback. So-called nonhomogeneous models (eg. Kalman filtering with time-dependent parameters) and control variables are out of scope. I don't have as much time as I would like for maintaining the package. If you may be interested in (paid) work on this package, please don't hesitate to get in touch.
+The tentative scope of the package includes:
+- simulation, filtering / smoothing, latent state inference, likelihood evaluations, EM-algorithm helpers.
+- any type of hidden Markov models: discrete / continuous, linear / nonlinear, with / without feedback. 
+Out-of-scope are:
+- parameter estimation, ie. likelihood _maximization_. The package does provide all the tools needed for MLE implementation using an external optimization package (including loglikelihood evaluations compatible with automatic differentiation), but in order to keep the package focused and a lean REQUIRE file, we leave this responsibility to the user. 
+- so-called nonhomogeneous models (eg. Kalman filtering with time-dependent parameters).
+- control variables.
 
-## Overview
-
-
-The package is organized around implicit interfaces: it defines abstract types such as `StrictHiddenMarkov` and implements methods such as `filtr(model::StrictHiddenMarkov,data,initial,technique::FilteringTechnique)`. The `filtr` method will in turn rely on the user's implementation of the suitable methods for the given type, such as one-step-ahead simulations or density evaluations.
-
-
-| Models              | Filtering      | Smoothing | Viterbi           | Sampling | MLE | EM  |
-| ------------------- | -------------- | --------- | ----------------- | -------- | --- | --- |
-| Discrete            | X              | X         | X                 | X        | X   | X   |
-| LinearGaussian      | X              | X         |                   |          |     |     |
-| Strict              | KKF, KDF, PDF  |           |                   |          |     |     |
-| AR                  | KKF, KDF, PDF  |           |                   |          |     |     |
-
+I don't have as much time as I would like for maintaining the package. If you may be interested in (paid) work on this package, please don't hesitate to get in touch.
 
 ## Usage
 
-Let's take a hidden Markov model with hidden/latent state x and emission/observed sate y. x can takes values 1,2, and y can take values 1, 2, 3. x has transition matrix A and y is drawn conditional on x according to the matrix B below:
 
-~~~
-.
-    [ .4   .6 ]        [ .3   .1   .6 ]
-A = [ .3   .7 ]    B = [ .5   .2   .3 ]
-~~~    
-
-Here is the Julia code to initiate the model, draw 10,000 consecutive observations from it, and estimate the value of A and B from the data using the Baum-Welch algorithm. The Baum-Welch algorithm is just the standard EM algorithm, where the optimization step (the M step) is accessible in closed-form thanks to the particular structure of hidden Markov models. We obtain the maximum likelihood estimator.   
+The package is organized around implicit interfaces:
+- the package defines abstract types such as `StrictHMM` and implements generic methods such as `filtr(model::StrictHMM,initial,data,technique::FilteringTechnique)`. 
+- the generic methods will in turn rely on the user's implementation of suitable model-specific methods, such as one-step-ahead simulations or density evaluations.
 
 
-~~~julia
-julia> using HiddenMarkovModels;
-julia> a=[.4 .6; .3 .7];
-julia> b=[.3 .1 .6; .5 .2 .3];
-julia> model=hmm((a,b));
-julia> data=rand(model,10000);
-julia> @time abhat=em(model,data)
-estimating hidden Markov model via Baum-Welch algorithm...
- log-likelihood: -1.0267
- 0.004404 seconds (102 allocations: 317.891 KB)
-(
-2x2 Array{Float64,2}:
-0.398849  0.601151
-0.300235  0.699765,
-
-2x3 Array{Float64,2}:
-0.301938  0.099349  0.598713
-0.501222  0.199013  0.299765)
-~~~
-
-In this example it took 4.4 ms to compute the MLE from 10,000 time series observations. The heavy-lifting is done in the back-end package  [DynamicDiscreteModels.jl](https://github.com/BenConnault/DynamicDiscreteModels.jl).
+| Models              | Sampling | Filtering         | Smoothing | loglikelihood  | Viterbi | E-step weights |
+| ------------------- | -------- | ----------------- | --------- | -------------- | ------- | -------------- |
+| DiscreteHMM         | X        | X                 | X         | X              | X       | X              |
+| LinearGaussianHMM   | X        | X                 | X         |                |         |                |
+| StrictHMM           | X        | kernel filtering  |           |                |         |                |
 
 
+## Author
 
-## Nitty-Gritty
-
-
-Most filtering algorithms follow a recursive mutation-selection (or selection-mutation) strategy. This is simply because the true 
+Benjamin Connault
 
 
-| Algorithm name          | mutation           | selection          | fixed basis? |
-| ----------------------- | ------------------ | ------------------ | ------------ |
-| KKF, kernel filtering   | kernel Markov rule | kernel Bayes rule  | yes          |
-| KDF                     | kernel Markov rule | density evaluation | yes          |
-| PKF                     | particles          | kernel Bayes rule  | no           |
-| PDF, particle filtering | particles          | density evaluation | no           |
-
-
-| Hidden Markov structure | order              | R=  | Q            | M          |
-| ----------------------- | ------------------ | --- | ------------ | ---------- |
-| General                 | selection-mutation | MQ  | Q(X'|X,y,y') | f(y'|X,y)  |
-| Bootstrap               | mutation-selection | QM  | Q(X'|X,y)    | f(y'|X',y) |
-| AR                      | mutation-selection | QM  | Q(X'|X)      | f(y'|X',y) |
-| Strict                  | mutation-selection | QM  | Q(X'|X)      | f(y'|X')   |
-
-<!-- 
-| Models / Algorithms | Filtering  | Smoothing | Backward Sampling | Viterbi | MLE | EM  |
-| ------------------- | ---------- | --------- | ----------------- | ------- | --- | --- |
-| Discrete            | X          | X         | X                 | X       | X   | X   |
-| LinearGaussian      | X          | X         |                   |         |     |     |
-| Strict              | KF, BF, PF |           |                   |         |     |     |
-| AR                  | KF, BF, PF |           |                   |         |     |     |
- -->
