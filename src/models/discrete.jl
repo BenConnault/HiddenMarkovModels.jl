@@ -32,7 +32,7 @@ qxyxy(model::DiscreteHMM,x,y,x2,y2) = error("no method qxyxy!(model::$(typeof(mo
 ######################################################################################
 
 #Should I try and make this type-stable?
-# function _filtr{F}(model::DiscreteHMM{F},ini_filter,data)
+# => function _filtr{F}(model::DiscreteHMM{F},ini_filter,data)
 
 function _filtr(model::DiscreteHMM,ini_filter,data)
     T=length(data)
@@ -104,7 +104,7 @@ function eweights!(w,model::DiscreteHMM,ini_filter,data)
     nx,T = size(fil)
 
     conditional=Array{Float64}(nx,nx)
-    print("Running the discrete smoother... ")
+    print("Computing E-step weights for discrete model... ")
     for t=1:T-1
         tempsum=0.0
         for jx=1:nx

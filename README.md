@@ -1,5 +1,11 @@
 # HiddenMarkovModels.jl
 
+![nonlinear filtering for a truncated AR(1)](examples/banner.png)
+
+
+
+
+
 As of 10/2017, the package implements:
 - A fairly complete set of methods for working with discrete hidden Markov models: filtering, smoothing, maximum likelihood estimation via closed-form EM (aka. the Baum-Welch algorithm), Viterbi smoothing. 
 - Basic Kalman for linear Gaussian hidden Markov models: filtering, smoothing.

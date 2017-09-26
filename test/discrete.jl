@@ -31,7 +31,8 @@ model_2 = SimpleModel(A,B)
 
 HMM.qxyxy(model::SimpleModel,x,y,x2,y2) = model.qxx[x,x2]*model.qxy[x2,y2]
 
-filter_from_native = filtr(model_2,ini,data)
+llk_from_native = loglikelihood(model_2,ini,data)
+filter_from_native,smoother_from_native = filter_smoother(model_2,ini,data)
 
 
 ######################################################################################
@@ -40,7 +41,9 @@ filter_from_native = filtr(model_2,ini,data)
 
 model_1 = HMM.dhmm((A,B),ini*fill(1/6,1,6))
 fil,smo,cond=filtr(model_1,data)  # from DynamicDiscreteModels.jl
-filter_from_old=fil
+filter_from_old   = fil
+smoother_from_old = smo
+llk_from_old = loglikelihood(model_1,data)
 
 ######################################################################################
 ### Kernel filtering with regularization parameter = 0
