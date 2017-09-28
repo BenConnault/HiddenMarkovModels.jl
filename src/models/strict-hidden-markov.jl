@@ -68,11 +68,12 @@ mutation!(pred,model::StrictHMM,mu,kf::KKF_SHHM) = upq!(pred,mu,kf.qxx)
 
 function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
     nx,ny=size(kf.qxy)
-    gy=Array{Float64}(ny)
-    for iy=1:ny
-        gy[iy]=kk(kf.byy[iy],y_tp1)
-    end
-    mu[:]=kbr(predictive,kf.qxy,gy,kf.ky,kf.tol)
+    kernel_bayes!(mu,predictive,kf.qxy,y_tp1,kf.byy,kf.ky,kf.tol)
+    # gy=Array{Float64}(ny)
+    # for iy=1:ny
+    #     gy[iy]=kk(kf.byy[iy],y_tp1)
+    # end
+    # mu[:]=kbr(predictive,kf.qxy,gy,kf.ky,kf.tol)
 end
 
 
