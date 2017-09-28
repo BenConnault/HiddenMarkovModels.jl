@@ -1,4 +1,4 @@
-# API for common update functions 
+# From Vector{Vector{F}} to Matrix{F} and back 
 
 function mat(xx::Vector{Vector{Float64}})
     T = length(xx)
@@ -24,9 +24,19 @@ end
 
 
 # Markov rule: nu = mu Q
-upq(mu,q)=vec(mu'*q)   #un-optimized
+upq(mux,qxy)=vec(mux'*qxy)   #un-optimized
 
-upq!(nu,mu,q)=At_mul_B!(nu,q,mu)
+upq!(nuy,mux,qxy)=At_mul_B!(nuy,qxy,mux)
+
+function upj!(nuxy,mux,qxy)
+    nx,ny = size(qxy)
+    for jy=1:ny
+        for ix=1:nx
+            nuxy[ix,jy] = mux[ix]*qxy[ix,jy]
+        end
+    end
+end
+
 
 # Boltzman Gibbs update: nu = (mu.*f)/sum(mu.*f)
 upf(mu,f)=normalize(mu.*f,1)  #un-optimized

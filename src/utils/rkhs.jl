@@ -52,7 +52,11 @@ end
 
 
 
-probnorm(mu)=normalize(mu.*(mu.>0),1)
+function probnorm(mu)
+    nu=zeros(mu)
+    probnorm!(nu,mu)
+    nu
+end
 
 
 """
@@ -66,18 +70,106 @@ based on a precomputed transition function matrix from `bxx` to `byy`.
 ie. `gy[j]=k(yy[j],y0)`. 
 Return the coordinate vector of the posterior in `bxx`.
 """
-function kbr(q,ky,mux,gy,tol=1.0)
-    # mu=diagm(mux)*q    # you don't want to store the full joint in memory, better to recompute it on the fly below
-    muy=upq(mux,q)
+function kbr(mux,qxy,gy,ky,tol=1.0)
+    muy=upq(mux,qxy)
     n=length(muy)
     dmuy=diagm(muy)
-    # pix=diagm(mux)*q*(ky\((ky*dmuy+tol/sqrt(n)*I)\gy))    #THIS MYSTERIOUSLY SEEMS TO WORK OK  
-    # pix=diagm(mux)*q*((dmuy*ky+tol/sqrt(n)*I)\gy)           #THIS DOES NOT WORK, TESTED ON DISCRETE CASE    
-    pix=diagm(mux)*q*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
+    pix=diagm(mux)*qxy*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
     probnorm(pix)
 end
 
 
+########################################################################################################
+### Fundamental operations:
+###    kernel_joint()
+###    kernel_marginal()
+###    kernel_disintegration()
+###    kernel_markov() **           
+###
+###    (**could be obtained by joint + marginal, but an explicit implementation is more efficient)
+###
+### Derived operations:
+###    kernel_bayes
+###    kernel_conditional_bayes
+########################################################################################################
+
+function probnorm!(nu,mu)
+    n = length(mu)
+    acc = 0.0
+    for i = 1:n
+        acc += mu[i]*(mu[i]>0)
+    end
+    for i = 1:n
+        nu[i] = mu[i]*(mu[i]>0)/acc
+    end
+end
+
+kernel_joint!(muxy,mux,qxy) = upj!(muxy,mux,qxy)
+
+
+# Given:
+#  - a joint nu(dx,dy) (nx x ny array) 
+#  - a gramian gy = G(y-basis, delta_y0) (or any other nu_y instead of delta_y0)
+# Return:
+#  - a disintegration pi(x|y_0) (or any other q(x|y)*nu_y)
+function kernel_disintegration!(nux,muxy,gy,ky,tol=1.0) 
+    ny   = size(ky,1)
+    KD   = ky.*sum(muxy,1)
+    temp = (KD+tol/sqrt(ny)*I)\gy
+    probnorm!(nux,muxy*temp)
+end
+
+# Given:
+#  - a marginal mu(dx)
+#  - a kernel q(dy|x)
+#  - some data y_0
+# Return:
+#  - a posterior pi(x|y_0)
+function kernel_bayes!(pix,mux,qxy,y0,byy,ky,tol=1.0)
+    gy = gramian(byy,y0)
+    nx, ny = size(qxy)
+    muxy = zeros(nx,ny)
+    kernel_joint!(muxy,mux,qxy)
+    kernel_disintegration!(pix,muxy,gy,ky,tol)
+end
+
+# Given:
+#  - a marginal mu(dx)
+#  - some data y_0
+#  - a kernel q(dz|x,y)  (nx x ny x nz array) 
+#  - some data z_0
+# Return:
+#  - a posterior pi(x|y_0,z_0)
+# Key idea:
+# Q-hat(z|x,y) joint wrt/ mu_x and summed wrt/ delta-hat_y0 converges to Q(z,x|y0) 
+function kernel_conditional_bayes!(pix,mux,y0,byy,ky,qxyz,z0,bzz,kz,tol=1.0)
+    nx, ny, nz = size(qxyz)
+    muy = probnorm(ky\gramian(byy,y0))
+    muxz = zeros(nx,nz)
+    for iy = 1:ny
+        # TODO: may want to skip summing over all iy indices: we expect many of them to have zero weights
+        for jz = 1:nz
+            for ix = 1:nx
+                muxz[ix,jz] += muy[iy]*mux[ix]*qxyz[ix,iy,jz]
+            end
+        end
+    end 
+    gz = gramian(bzz,z0)
+    kernel_disintegration!(pix,muxz,gz,kz,tol)
+end
+
+
+
+
+
+
+function kbr(mux,qxy,gy,ky,tol=1.0)
+    muy=upq(mux,qxy)
+    n=length(muy)
+    dmuy=diagm(muy)
+    pix=diagm(mux)*qxy*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
+    probnorm(pix)
+end
 
 
 

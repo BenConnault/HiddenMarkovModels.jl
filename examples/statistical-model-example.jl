@@ -7,7 +7,6 @@
 #   or use the EM-algorithm with E-step via `eweights!()` and M-step via numerical optimization. 
 # - `likelihood()` is compatible with automatic differentiation   
 
-reload("HiddenMarkovModels")
 
 module dev
 

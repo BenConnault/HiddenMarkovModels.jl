@@ -72,7 +72,7 @@ function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
     for iy=1:ny
         gy[iy]=kk(kf.byy[iy],y_tp1)
     end
-    mu[:]=kbr(kf.qxy,kf.ky,predictive,gy,kf.tol)
+    mu[:]=kbr(predictive,kf.qxy,gy,kf.ky,kf.tol)
 end
 
 
