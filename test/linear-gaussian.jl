@@ -25,6 +25,19 @@ true_filter_vcov=reshape([
 1.0  0.420565  0.36862   0.362919  0.362281
 ],2,2,T)
 
+true_smoother_mean=[
+-0.0576932  -0.201632  -0.597999  -0.582496  -0.469717;
+-0.336363   -0.491782  -0.991485  -0.292958  -0.472556
+]
+
+true_smoother_vcov=reshape([
+ 0.632536  0.477203  0.445593  0.464259  0.591425;
+-0.010903  0.103628  0.125506  0.140139  0.204696;
+-0.010903  0.103628  0.125506  0.140139  0.204696;
+ 0.669851  0.337303  0.298836  0.302795  0.362281
+ ],2,2,T)
+
+
 linear_gaussian_model = LinearGaussianHMM(axx,sqrtvxx,axy,sqrtvxy)
 ini_filter = (ini_filter_mean, ini_filter_vcov)
 filter_mean, filter_vcov = filtr(linear_gaussian_model,ini_filter,data)
@@ -38,3 +51,9 @@ tol=1e-4
 
 @test norm(filter_mean - true_filter_mean) < tol
 @test norm(vec(filter_vcov - true_filter_vcov)) < tol
+
+
+fil_mean, fil_vcov, smoother_mean, smoother_vcov = filter_smoother(linear_gaussian_model,ini_filter,data)
+
+@test norm(smoother_mean - true_smoother_mean) < tol
+@test norm(vec(smoother_vcov - true_smoother_vcov)) < tol
