@@ -12,7 +12,8 @@ end
 
 ## FIELDS
 
-# (no fields)
+    # nx::Int
+    # ny::Int
 
 ## METHODS
 
@@ -30,6 +31,14 @@ qxyxy(model::DiscreteHMM,x,y,x2,y2) = error("no method qxyxy!(model::$(typeof(mo
 ######################################################################################
 ### Methods common to all DiscreteHMM's
 ######################################################################################
+
+
+function rand(model::DiscreteHMM,xy::Tuple)
+    x,y = xy
+    w = vec([qxyxy(model,x,y,jx,jy) for jx=1:model.nx, jy=1:model.ny])
+    xy2 = ind2sub((model.nx,model.ny),wsample(w)) 
+    xy2
+end
 
 #Should I try and make this type-stable?
 # => function _filtr{F}(model::DiscreteHMM{F},ini_filter,data)

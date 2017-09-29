@@ -7,6 +7,20 @@
 
 
 
+# Any method that uses Kernel method for mutation, 
+# so far: KKFs and KDFs.
+# Don't want to use a union type because these are KKF_GHM, KKF_BHM, KKF_AHM, KKF_SHM,  
+abstract type KXF <: FilteringTechnique
+end
+
+function initial_filter(model,ini_sample,filtering_method::KXF)
+    n=length(ini_sample)
+    g=gramian(filtering_method.bxx,ini_sample)*ones(n)/n
+    probnorm(filtering_method.kx\g)
+end
+
+
+
 # Initial nonlinear filter is typically given as a sample, must be expressed in basis
 function filtr(model,ini_sample,data,filtering_method)
     ini = initial_filter(model,ini_sample,filtering_method)

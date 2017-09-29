@@ -1,4 +1,37 @@
 ######################################################################################
+### Corner case tests
+######################################################################################
+
+struct SimpleModel{F} <: HMM.DiscreteHMM
+    nx::Int
+    ny::Int
+    qxx::Matrix{F}
+    qxy::Matrix{F}
+end
+
+function simple_model(qxx::Matrix,qxy::Matrix)
+    nx,ny = size(qxy)
+    SimpleModel(nx,ny,qxx,qxy)
+end
+
+HMM.qxyxy(model::SimpleModel,x,y,x2,y2) = model.qxx[x,x2]*model.qxy[x2,y2]
+
+
+corner_qxx = ones(1,1)
+corner_qxy = [1. 0]
+
+corner_model = simple_model(corner_qxx,corner_qxy)
+
+@test rand(corner_model,(1,1),5) == (ones(Int,5), ones(Int,5))
+
+
+
+
+
+
+
+
+######################################################################################
 ### Test data
 # example based on code from github/ahwillia
 # > based on Michael Hamilton's "dishonest casino" example:
@@ -41,14 +74,9 @@ true_joint_smoother = reshape([
 ######################################################################################
 
 
-struct SimpleModel{F} <: HMM.DiscreteHMM
-    qxx::Matrix{F}
-    qxy::Matrix{F}
-end
 
-model_2 = SimpleModel(A,B)
 
-HMM.qxyxy(model::SimpleModel,x,y,x2,y2) = model.qxx[x,x2]*model.qxy[x2,y2]
+model_2 = simple_model(A,B)
 
 llk_from_native = loglikelihood(model_2,ini,data)
 filter_from_native,smoother_from_native = filter_smoother(model_2,ini,data)

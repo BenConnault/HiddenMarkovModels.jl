@@ -30,15 +30,15 @@ include("utils/rkhs.jl")
 
 ### Core methods
 
-	include("models/abstract-hidden-markov.jl")
-	include("models/discrete.jl")
-	include("models/strict-hidden-markov.jl")  
-	include("models/linear-gaussian.jl")
-	include("filtering/generic-filter.jl")
-	include("filtering/kalman-filter.jl")
-	include("filtering/particle-filter.jl")
-	# include("filtering/high-dim-kernel-filter.jl")   #TO ADAPT
-	# include("filtering/kernel-density-filter.jl")    #TO ADAPT
+	include("main/abstract-hidden-markov.jl")
+	include("main/generic-filter.jl")
+	include("main/discrete.jl")
+	include("main/dynamics-approximation.jl")
+	include("main/strict-hidden-markov.jl")  
+	include("main/linear-gaussian.jl")
+	include("main/particle-filter.jl")
+	# include("main/high-dim-kernel-filter.jl")   #TO ADAPT
+	# include("main/kernel-density-filter.jl")    #TO ADAPT
 
 	export HiddenMarkovModels, LinearGaussianHMM, DiscreteHMM    	    # model types
 	export KKF														    # filtering techniques
@@ -46,8 +46,8 @@ include("utils/rkhs.jl")
 	export viterbi
 
 include("utils/stochasticmatrices.jl")
-include("utils/tensors.jl")
-include("utils/distances.jl")
+# include("utils/tensors.jl")
+# include("utils/distances.jl")
 
 
 end

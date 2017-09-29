@@ -1,6 +1,6 @@
 The HiddenMarkovModels.jl package is licensed under the MIT "Expat" License:
 
-> Copyright (c) 2015: Ben Connault.
+> Copyright (c) 2015-2017: Ben Connault.
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the

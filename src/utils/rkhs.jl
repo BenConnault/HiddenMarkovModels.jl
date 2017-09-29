@@ -25,7 +25,9 @@ kk(x1::Int,x2::Int,place_holder=Laplace()) = exp(-abs(x1-x2))
 gramian(yy,kt::Kernel=Laplace())=gramian(yy,yy,kt)
 
 
-function gramian(yy1,yy2,kt::Kernel=Laplace())
+gramian{Ty}(yy1::Vector{Ty},yy2::Ty,kt::Kernel=Laplace()) = gramian(yy1,[yy2])
+
+function gramian{Ty}(yy1::Vector{Ty},yy2::Vector{Ty},kt::Kernel=Laplace())
     n1=length(yy1)
     n2=length(yy2)
     ky=zeros(n1,n2)
@@ -59,39 +61,6 @@ function probnorm(mu)
 end
 
 
-"""
-    kbr(q,ky,mux,gy)
-
-Compute the kernel Bayes rule `prior mux -> posterior conditional on data y0`
-based on a precomputed transition function matrix from `bxx` to `byy`.
-`byy` has Gramian `ky`.
-`mux` the coordinate vector of the prior in `bxx`.
-`gy[j]` gives the inner product of the data `k_y0` with ``k_{y_j}``, 
-ie. `gy[j]=k(yy[j],y0)`. 
-Return the coordinate vector of the posterior in `bxx`.
-"""
-function kbr(mux,qxy,gy,ky,tol=1.0)
-    muy=upq(mux,qxy)
-    n=length(muy)
-    dmuy=diagm(muy)
-    pix=diagm(mux)*qxy*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
-    probnorm(pix)
-end
-
-
-########################################################################################################
-### Fundamental operations:
-###    kernel_joint()
-###    kernel_marginal()
-###    kernel_disintegration()
-###    kernel_markov() **           
-###
-###    (**could be obtained by joint + marginal, but an explicit implementation is more efficient)
-###
-### Derived operations:
-###    kernel_bayes
-###    kernel_conditional_bayes
-########################################################################################################
 
 function probnorm!(nu,mu)
     n = length(mu)
@@ -103,6 +72,21 @@ function probnorm!(nu,mu)
         nu[i] = mu[i]*(mu[i]>0)/acc
     end
 end
+
+########################################################################################################
+### Fundamental operations:
+###    kernel_joint()
+###    kernel_disintegration()
+###    kernel_marginal()        [TODO]
+###    kernel_markov() **       [TODO]    
+###
+###    (**could be obtained by joint + marginal, but an explicit implementation is more efficient)
+###
+### Derived operations:
+###    kernel_bayes
+###    kernel_conditional_bayes
+########################################################################################################
+
 
 kernel_joint!(muxy,mux,qxy) = upj!(muxy,mux,qxy)
 
@@ -160,54 +144,70 @@ end
 
 
 
+########################################################################################################
+### Deprecated
+########################################################################################################
 
 
 
-function kbr(mux,qxy,gy,ky,tol=1.0)
-    muy=upq(mux,qxy)
-    n=length(muy)
-    dmuy=diagm(muy)
-    pix=diagm(mux)*qxy*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
-    probnorm(pix)
-end
+
+# """
+#     kbr(q,ky,mux,gy)
+
+# Compute the kernel Bayes rule `prior mux -> posterior conditional on data y0`
+# based on a precomputed transition function matrix from `bxx` to `byy`.
+# `byy` has Gramian `ky`.
+# `mux` the coordinate vector of the prior in `bxx`.
+# `gy[j]` gives the inner product of the data `k_y0` with ``k_{y_j}``, 
+# ie. `gy[j]=k(yy[j],y0)`. 
+# Return the coordinate vector of the posterior in `bxx`.
+# """
+# function kbr(mux,qxy,gy,ky,tol=1.0)
+#     muy=upq(mux,qxy)
+#     n=length(muy)
+#     dmuy=diagm(muy)
+#     pix=diagm(mux)*qxy*((ky*dmuy+tol/sqrt(n)*I)\gy)           #THIS IS IS THE REAL ALGORITHM, TESTED     
+#     probnorm(pix)
+# end
 
 
 
-"""
-    ksr2(kx,gx)
 
-Compute the kernel sum rule based on a fixed sample ``(x,y)_{1:n}``.
-`xx` has Gramian `kx`.
-`gx[i]` gives the inner product of the input prior `mu` with ``k_{x_i}``. 
-If `mu` is given with coordinates `b` in `xx`, then `g:=kx*b`.
-Return the coordinates of the posterior in `yy`.
-"""
-function ksr2(kx,gx,tol=1.0)
-    n=size(kx,2)
-    (kx+tol/sqrt(n)*n*I)\gx    
-end
+# """
+#     ksr2(kx,gx)
 
-"""
-    kbr2(kx,ky,gx,gy)
+# Compute the kernel sum rule based on a fixed sample ``(x,y)_{1:n}``.
+# `xx` has Gramian `kx`.
+# `gx[i]` gives the inner product of the input prior `mu` with ``k_{x_i}``. 
+# If `mu` is given with coordinates `b` in `xx`, then `g:=kx*b`.
+# Return the coordinates of the posterior in `yy`.
+# """
+# function ksr2(kx,gx,tol=1.0)
+#     n=size(kx,2)
+#     (kx+tol/sqrt(n)*n*I)\gx    
+# end
 
-Compute the kernel Bayes rule based on a fixed sample ``(x,y)_{1:n}``.
-`xx` and `yy` have Gramians `kx` and `ky`.
-`gx[i]` gives the inner product of the input prior `mu` with ``k_{x_i}``. 
-If `mu` is given with coordinates `b` in `xx`, then `g:=kx*b`.
-`gy[j]` gives the inner product of the data `k_y` with ``k_{y_j}``, 
-ie. `gy[j]=k(yy[j],y)`. 
-Return the coordinates of the posterior in `xx`.
-"""
-function kbr2(kx,ky,gx,gy,tol=1.0)
-    mu=ksr2(kx,gx)
-    n=length(mu)
-    # `mu` is the coordinates the prior times conditional
-    # ie both of the marginal on `y` in the y_j basis,
-    # and of the joint in the (x,y)_j basis.
-    dmu=diagm(mu)
-    pix=dmu*ky*(((dmu*ky)^2+tol/sqrt(n)*I)\(dmu*gy))
-    pix
-end
+# """
+#     kbr2(kx,ky,gx,gy)
+
+# Compute the kernel Bayes rule based on a fixed sample ``(x,y)_{1:n}``.
+# `xx` and `yy` have Gramians `kx` and `ky`.
+# `gx[i]` gives the inner product of the input prior `mu` with ``k_{x_i}``. 
+# If `mu` is given with coordinates `b` in `xx`, then `g:=kx*b`.
+# `gy[j]` gives the inner product of the data `k_y` with ``k_{y_j}``, 
+# ie. `gy[j]=k(yy[j],y)`. 
+# Return the coordinates of the posterior in `xx`.
+# """
+# function kbr2(kx,ky,gx,gy,tol=1.0)
+#     mu=ksr2(kx,gx)
+#     n=length(mu)
+#     # `mu` is the coordinates the prior times conditional
+#     # ie both of the marginal on `y` in the y_j basis,
+#     # and of the joint in the (x,y)_j basis.
+#     dmu=diagm(mu)
+#     pix=dmu*ky*(((dmu*ky)^2+tol/sqrt(n)*I)\(dmu*gy))
+#     pix
+# end
 
 
 

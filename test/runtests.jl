@@ -18,4 +18,4 @@ include("discrete.jl")
 
 println()
 println("* Testing Kalman filtering...")
-include("linear-gaussian-models.jl")
+include("linear-gaussian.jl")

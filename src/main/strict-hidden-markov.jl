@@ -43,13 +43,24 @@ struct KKF_SHHM{Tx,Ty} <: KXF
     tol::Float64    # regularization parameter
 end
 
+mutation!(pred,model::StrictHMM,mu,kf::KKF_SHHM) = upq!(pred,mu,kf.qxx)    
+
+function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
+    nx,ny=size(kf.qxy)
+    kernel_bayes!(mu,predictive,kf.qxy,y_tp1,kf.byy,kf.ky,kf.tol)
+end
+
+
 function KKF(model::StrictHMM,bxx,byy,qxx,qxy,tol_kbr=1.0) 
     kx=gramian(bxx)
     ky=gramian(byy)
     KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr)
 end
 
-function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0,m::Int=500,tol_approx=0.0)
+rand(model::HiddenMarkovModel,flag::Val{:x},x) = draw_x(model,x)
+rand(model::HiddenMarkovModel,flag::Val{:y},x) = draw_y(model,x)
+
+function KKF(model::StrictHMM,bxx,byy,m::Int,tol_kbr=1.0,tol_approx=0.0)
     kx=gramian(bxx)
     ky=gramian(byy)
 
@@ -64,17 +75,21 @@ function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0,m::Int=500,tol_approx=0.0)
     KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr)
 end
 
-mutation!(pred,model::StrictHMM,mu,kf::KKF_SHHM) = upq!(pred,mu,kf.qxx)    
+function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0)
+    kx=gramian(bxx)
+    ky=gramian(byy)
 
-function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
-    nx,ny=size(kf.qxy)
-    kernel_bayes!(mu,predictive,kf.qxy,y_tp1,kf.byy,kf.ky,kf.tol)
-    # gy=Array{Float64}(ny)
-    # for iy=1:ny
-    #     gy[iy]=kk(kf.byy[iy],y_tp1)
-    # end
-    # mu[:]=kbr(predictive,kf.qxy,gy,kf.ky,kf.tol)
+    print("Building transition matrix (using densities)... ")
+    qxx=markovapprox(model, Val(:x), bxx, bxx)
+    println()
+
+    print("Building observation matrix (using densities)... ")
+    qxy=markovapprox(model, Val(:y), bxx, byy)
+    println()
+    
+    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr)
 end
+
 
 
 
