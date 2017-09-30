@@ -1,3 +1,8 @@
+# Notes:
+# - Kalman filter/smoother works with determinstic observations (noise vcov =0)
+
+
+
 # inheriting gives access to simulation method `rand()`
 struct LinearGaussianHMM <: StrictHMM
     axx::Matrix{Float64}
@@ -7,7 +12,7 @@ struct LinearGaussianHMM <: StrictHMM
 end
 
 
-cgaussian(a,sqrtv,x) = a*x+sqrtv*randn(length(x))
+cgaussian(a,sqrtv,x) = a*x+sqrtv*randn(size(a,1))
 
 draw_x(model::LinearGaussianHMM,x) = cgaussian(model.axx,model.sqrtvxx,x)
 draw_y(model::LinearGaussianHMM,x) = cgaussian(model.axy,model.sqrtvxy,x)
@@ -15,7 +20,8 @@ draw_y(model::LinearGaussianHMM,x) = cgaussian(model.axy,model.sqrtvxy,x)
 cpdf(model::LinearGaussianHMM,flag::Val{:x},x,x2) = cpdf_gaussian(x,x2,model.axx,model.sqrtvxx) 
 cpdf(model::LinearGaussianHMM,flag::Val{:y},x,y)  = cpdf_gaussian(x,y,model.axy,model.sqrtvxy)
 
-cpdf_gaussian(x,y,axy,sqrtvxy)=exp(-sum((sqrtvxy\(y-axy*x)).^2)/2)/((2*pi)^(length(y)/2)*det(sqrtvxy))
+cpdf_gaussian(x::Vector{Float64},y::Vector{Float64},axy::Matrix{Float64},sqrtvxy::Matrix{Float64})::Float64 = 
+        exp(-sum((sqrtvxy\(y-axy*x)).^2)/2)/((2*pi)^(length(y)/2)*det(sqrtvxy))
 
 
 
@@ -25,7 +31,7 @@ function filtr(model::LinearGaussianHMM,ini,data)
 
     ini_mean,ini_vcov = ini
 
-    nx = length(ini_mean)
+    ny,nx = size(model.axy)
     filter_mean = Array{Float64}(nx,T)
     filter_vcov = Array{Float64}(nx,nx,T)
     
@@ -35,8 +41,9 @@ function filtr(model::LinearGaussianHMM,ini,data)
     predic_mean = zeros(nx) 
     predic_vcov = zeros(nx,nx) 
     
-    temp = zeros(nx,nx) 
-    S    = zeros(nx,nx)
+    tempx = zeros(nx,nx) 
+    tempy = zeros(ny,nx) 
+    S    = zeros(ny,ny)
 
     vxx = model.sqrtvxx^2
     vxy = model.sqrtvxy^2
@@ -47,14 +54,14 @@ function filtr(model::LinearGaussianHMM,ini,data)
         # m = a mean_t
         # v = a vcvo_t a' + vxx
         A_mul_B!(predic_mean, model.axx, view(filter_mean,:,t))
-        A_mul_B!(temp, model.axx, view(filter_vcov,:,:,t))
-        A_mul_Bt!(predic_vcov, temp, model.axx)
+        A_mul_B!(tempx, model.axx, view(filter_vcov,:,:,t))
+        A_mul_Bt!(predic_vcov, tempx, model.axx)
         broadcast!(+,predic_vcov,predic_vcov,vxx)
 
         # s = b v b' + vxy
         # k = v b' s^-1
-        A_mul_B!(temp, model.axy, predic_vcov)
-        A_mul_Bt!(S, temp, model.axy)
+        A_mul_B!(tempy, model.axy, predic_vcov)
+        A_mul_Bt!(S, tempy, model.axy)
         broadcast!(+,S,S,vxy)
         K = predic_vcov*At_rdiv_B(model.axy,S)
         
