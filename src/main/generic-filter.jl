@@ -19,6 +19,17 @@ function initial_filter(model,ini_sample,filtering_method::KXF)
     probnorm(filtering_method.kx\g)
 end
 
+abstract type LRKXF <: FilteringTechnique
+end
+
+
+function initial_filter(model,ini_sample,kf::LRKXF)
+    n=length(ini_sample)
+    v6 = ones(n)/n
+    w = kf.gx20'*kf.gx20
+    gx60 = gramian(ini_sample,kf.xx0)
+    probnorm(kf.gx20*(w\(gx60'*v6)))
+end
 
 
 # Initial nonlinear filter is typically given as a sample, must be expressed in basis

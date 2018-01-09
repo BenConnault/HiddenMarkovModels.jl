@@ -2,7 +2,7 @@ module HiddenMarkovModels
 
 # For using   
 using StatsFuns: normcdf 
-using Distributions: wsample
+using Distributions: wsample, sample
 
 # For extending   
 using  StatsBase
@@ -33,12 +33,10 @@ include("utils/rkhs.jl")
 	include("main/abstract-hidden-markov.jl")
 	include("main/generic-filter.jl")
 	include("main/discrete.jl")
-	include("main/dynamics-approximation.jl")
-	include("main/strict-hidden-markov.jl")  
-	include("main/linear-gaussian.jl")
-	include("main/particle-filter.jl")
-	# include("main/high-dim-kernel-filter.jl")   #TO ADAPT
-	# include("main/kernel-density-filter.jl")    #TO ADAPT
+	include("main/strict-hidden-markov-kernel-methods.jl")  
+	include("main/strict-hidden-markov-low-rank-kernel-methods.jl")  
+	include("main/linear-gaussian.jl")  #inherits from StrictHMM
+	include("main/strict-hidden-markov-particle-methods.jl")  
 
 	export HiddenMarkovModels, LinearGaussianHMM, DiscreteHMM    	    # model types
 	export KKF, PF														    # filtering techniques

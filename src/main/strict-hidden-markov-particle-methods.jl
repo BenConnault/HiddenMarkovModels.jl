@@ -6,17 +6,13 @@ PF(n)=BootstrapParticleFilter(n)
 
 
 doc"""
-    filtr(transition,emission,initial,data,filteringalgo::BootstrapParticle)
+    filtr(model,ini_sample,data,filteringalgo::BootstrapParticleFilter)
 
 Run a bootstrap particle filter in a model with strict hidden Markov dynamics.
 The method runs an optimal particle filter in the artificial model where measurement is delayed one period.
-As a result the optimal particle filter tracks ``x_{t+1}|y_{1:t}``. 
-The method does a last step adjustement to account for the observation ``y_T``.
-`transition(x)` must return a random draw from ``Q(x'|x)``. 
-`emission(x,y)` must return the density of ``Q(y|x)`` with respect to some fixed dominating measure ``\lambda(dy)``.
-`initial(y)` must return a random draw from the conditional initial distribution ``x_1|y_1``.
+Rely on user-provided `draw_x(model,x)` and `cpdf(model,Val(:y),x,y`.
 """
-function filtr(model,ini_sample,data,pf::BootstrapParticleFilter)
+function filtr(model::StrictHMM,ini_sample,data,pf::BootstrapParticleFilter)
     n=pf.n
     nx=length(ini_sample[1])
     T=length(data)
@@ -27,10 +23,10 @@ function filtr(model,ini_sample,data,pf::BootstrapParticleFilter)
     end
     xxx=copy(xx[:,:,1])
     w=zeros(n)
-    for t=2:T
+    for t=1:T-1
         for i=1:n
-            xxx[:,i]=draw_x(model,xx[:,i,t-1])
-            w[i]=cpdf(model,Val(:y),xxx[:,i],data[t])
+            xxx[:,i]=draw_x(model,xx[:,i,t])
+            w[i]=cpdf(model,Val(:y),xxx[:,i],data[t+1])
         end
 
         ## resampling step
