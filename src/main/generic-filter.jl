@@ -38,9 +38,10 @@ function _filtr(model,ini_filter,data,filtering_method)
 
     pred = zeros(nx) 
 
-    print("Running the generic filter... ")
+    print("Running generic filter... ")
     for t=1:T-1
         # print((t%10==0)?"$t ":"")
+        # println("$t ")
         
         filter_update!(view(fil,:,t+1),pred,model,view(fil,:,t),data[t],data[t+1],filtering_method)
         

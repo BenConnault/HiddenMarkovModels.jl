@@ -41,7 +41,7 @@ include("utils/rkhs.jl")
 	# include("main/kernel-density-filter.jl")    #TO ADAPT
 
 	export HiddenMarkovModels, LinearGaussianHMM, DiscreteHMM    	    # model types
-	export KKF														    # filtering techniques
+	export KKF, PF														    # filtering techniques
 	export filtr, loglikelihood, filter_smoother, eweights!             # methods
 	export viterbi
 

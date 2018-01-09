@@ -16,8 +16,9 @@ function markovapprox(model,subkernel,bxx,byy)
 end
 
 
+
 # Approximation using simulation and kernel projections
-function markovapprox(model,subkernel,bxx,byy,ky,m=1000,tol=0.1)
+function markovapprox(model,subkernel,bxx,byy,ky,m::Int=1000,kky::Kernel=Laplace(),tol=0.0)
     nx=length(bxx)
     ny=length(byy)
     q=zeros(nx,ny)
@@ -27,7 +28,7 @@ function markovapprox(model,subkernel,bxx,byy,ky,m=1000,tol=0.1)
         for j=1:m
             y=rand(model,subkernel,bxx[ix])
             for jy=1:ny
-                gi[jy]=gi[jy]+kk(byy[jy],y)/m
+                gi[jy]=gi[jy]+kk(byy[jy],y,kky)/m
             end            
         end
         q[ix,:]=probnorm((ky+tol*I/sqrt(ny))\gi)

@@ -41,43 +41,45 @@ struct KKF_SHHM{Tx,Ty} <: KXF
     qxx::Matrix{Float64}
     qxy::Matrix{Float64}
     tol::Float64    # regularization parameter
+    kkx::Kernel
+    kky::Kernel
 end
 
 mutation!(pred,model::StrictHMM,mu,kf::KKF_SHHM) = upq!(pred,mu,kf.qxx)    
 
 function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
-    nx,ny=size(kf.qxy)
-    kernel_bayes!(mu,predictive,kf.qxy,y_tp1,kf.byy,kf.ky,kf.tol)
+    # nx,ny=size(kf.qxy)
+    kernel_bayes!(mu,predictive,kf.qxy,y_tp1,kf.byy,kf.ky,kf.kky,kf.tol)
 end
 
 
-function KKF(model::StrictHMM,bxx,byy,qxx,qxy,tol_kbr=1.0) 
-    kx=gramian(bxx)
-    ky=gramian(byy)
-    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr)
+function KKF(model::StrictHMM,bxx,byy,qxx,qxy,tol_kbr=1.0,kkx=Laplace(),kky=Laplace()) 
+    kx=gramian(bxx,kkx)
+    ky=gramian(byy,kky)
+    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
 rand(model::HiddenMarkovModel,flag::Val{:x},x) = draw_x(model,x)
 rand(model::HiddenMarkovModel,flag::Val{:y},x) = draw_y(model,x)
 
-function KKF(model::StrictHMM,bxx,byy,m::Int,tol_kbr=1.0,tol_approx=0.0)
-    kx=gramian(bxx)
-    ky=gramian(byy)
+function KKF(model::StrictHMM,bxx,byy,m::Int,tol_kbr=1.0,kkx=Laplace(),kky=Laplace(),tol_approx=0.0)
+    kx=gramian(bxx,kkx)
+    ky=gramian(byy,kky)
 
     print("Building transition matrix... ")
-    qxx=markovapprox(model, Val(:x), bxx, bxx, kx, m, tol_approx)
+    qxx=markovapprox(model, Val(:x), bxx, bxx, kx, m, kkx, tol_approx)
     println()
 
     print("Building observation matrix... ")
-    qxy=markovapprox(model, Val(:y), bxx, byy, ky, m, tol_approx)
+    qxy=markovapprox(model, Val(:y), bxx, byy, ky, m, kky, tol_approx)
     println()
     
-    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr)
+    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
-function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0)
-    kx=gramian(bxx)
-    ky=gramian(byy)
+function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0,kkx=Laplace(),kky=Laplace())
+    kx=gramian(bxx,kkx)
+    ky=gramian(byy,kky)
 
     print("Building transition matrix (using densities)... ")
     qxx=markovapprox(model, Val(:x), bxx, bxx)
@@ -87,7 +89,7 @@ function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0)
     qxy=markovapprox(model, Val(:y), bxx, byy)
     println()
     
-    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr)
+    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
 

@@ -16,24 +16,26 @@ The method does a last step adjustement to account for the observation ``y_T``.
 `emission(x,y)` must return the density of ``Q(y|x)`` with respect to some fixed dominating measure ``\lambda(dy)``.
 `initial(y)` must return a random draw from the conditional initial distribution ``x_1|y_1``.
 """
-function filtr(model,data,initial,pf::BootstrapParticleFilter)
+function filtr(model,ini_sample,data,pf::BootstrapParticleFilter)
     n=pf.n
-    nx=length(initial[1])
+    nx=length(ini_sample[1])
     T=length(data)
     xx=zeros(nx,n,T)   #xx[i,j,t] is the ith coordinate of the jth particle at time t
-    initial_index=sample(1:length(initial),n)
+    initial_index=sample(1:length(ini_sample),n)
     for i=1:n
-        xx[:,i,1]=initial[initial_index[i]]
+        xx[:,i,1]=ini_sample[initial_index[i]]
     end
     xxx=copy(xx[:,:,1])
     w=zeros(n)
     for t=2:T
         for i=1:n
-            xxx[:,i]=rand(model.transition,xx[:,i,t-1])
-            w[i]=cpdf(model.measurement,xxx[:,i],data[t])
+            xxx[:,i]=draw_x(model,xx[:,i,t-1])
+            w[i]=cpdf(model,Val(:y),xxx[:,i],data[t])
         end
+
+        ## resampling step
         # normalize!(w,1) #I believe this may unnecessary as wsample can take unnormalized weights
-        indx=Distributions.wsample(1:n,w,n)
+        indx=wsample(1:n,w,n)
         xx[:,:,t]=xxx[:,indx]
     end
     xx

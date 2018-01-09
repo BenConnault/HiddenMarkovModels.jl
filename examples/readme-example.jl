@@ -42,9 +42,9 @@ T     = 500
 xx,yy = rand(tar_model,ini,T)
 
 # Pick an approximate nonlinear filtering technique - here kernel filtering on a simple grid:
-bxx = [[x] for x=linspace(-10,10,100)]
-byy = [[y] for y=linspace(-10,10,100)]
-kf  = KKF(tar_model,bxx,byy)
+bxx = [[x] for x=linspace(-15,15,100)]
+byy = [[y] for y=linspace(-15,15,100)]
+kf  = KKF(tar_model,bxx,byy,1000)
 
 # pass an initial value for the nonlinear filter p(x_1|y_1) in the form of a sample.
 # Here we initialize the nonlinear filter at p(x_1|y_1) = delta_{x_0} (a point mass).

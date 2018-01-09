@@ -6,7 +6,23 @@ struct Laplace <: Kernel
 end
 
 # kk(x1::Int,x2::Int,place_holder=Laplace()) = 1.0*(x1==x2)
-kk(x1::Int,x2::Int,place_holder=Laplace()) = exp(-abs(x1-x2))
+kk(x1::Int,x2::Int,kt::Laplace=Laplace()) = exp(-abs(x1-x2))
+kk(x1::Float64,x2::Float64,kt::Laplace=Laplace()) = exp(-abs(x1-x2))
+
+function kk(x1::Vector{Float64},x2::Vector{Float64},kt::Laplace=Laplace())
+    n=length(x1)
+    alpha = 1.5
+    # alpha = 1.0
+    acc::Float64=abs(x1[1]-x2[1])^alpha
+    for i=2:n
+        acc=acc+abs(x1[i]-x2[i])^alpha
+    end
+    # exp(-acc^1.1)
+    exp(-acc)
+end
+
+
+
 
 # NOTE: for now I went with a design where I am not storing or using Symmetric kernel matrices
 #       (this shows in the FilteringTechnique types that carry the kernels in memory )
@@ -38,19 +54,6 @@ function gramian{Ty}(yy1::Vector{Ty},yy2::Vector{Ty},kt::Kernel=Laplace())
     end
     ky
 end
-
-
-
-function kk(x1::Vector{Float64},x2::Vector{Float64},kt::Laplace=Laplace())
-    n=length(x1)
-    acc::Float64=abs(x1[1]-x2[1])
-    for i=2:n
-        acc=acc+abs(x1[i]-x2[i])
-    end
-    # exp(-acc^1.5)
-    exp(-acc)
-end
-
 
 
 
@@ -104,13 +107,18 @@ function kernel_disintegration!(nux,muxy,gy,ky,tol=1.0)
 end
 
 # Given:
-#  - a marginal mu(dx)
-#  - a kernel q(dy|x)
-#  - some data y_0
+#  - a marginal mu(dx) -> mux
+#  - a kernel q(dy|x)  -> qxy
+#  - some data y_0     -> y0
 # Return:
-#  - a posterior pi(x|y_0)
-function kernel_bayes!(pix,mux,qxy,y0,byy,ky,tol=1.0)
-    gy = gramian(byy,y0)
+#  - a posterior pi(x|y_0) -> pix
+# Other tehnical parameters:
+#  - a basis `byy`
+#  - the Gramian `ky` of `byy`
+#  - a regularization parameter `tol`
+#  - a kernel function kky
+function kernel_bayes!(pix,mux,qxy,y0,byy,ky,kky=Laplace(),tol=1.0)
+    gy = gramian(byy,y0,kky)
     nx, ny = size(qxy)
     muxy = zeros(nx,ny)
     kernel_joint!(muxy,mux,qxy)
