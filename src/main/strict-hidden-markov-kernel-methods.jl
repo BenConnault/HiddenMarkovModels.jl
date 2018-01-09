@@ -53,7 +53,7 @@ function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
 end
 
 
-function KKF(model::StrictHMM,bxx,byy,qxx,qxy,tol_kbr=1.0,kkx=Laplace(),kky=Laplace()) 
+function KKF(model::StrictHMM,bxx,byy,qxx::Matrix{Float64},qxy,tol_kbr=1.0,kkx=Laplace(),kky=Laplace()) 
     kx=gramian(bxx,kkx)
     ky=gramian(byy,kky)
     KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
@@ -77,7 +77,7 @@ function KKF(model::StrictHMM,bxx,byy,m::Int,tol_kbr=1.0,kkx=Laplace(),kky=Lapla
     KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
-function KKF(model::StrictHMM,bxx,byy,tol_kbr=1.0,kkx=Laplace(),kky=Laplace())
+function KKF(model::StrictHMM,bxx,byy,tol_kbr::Float64=1.0,kkx=Laplace(),kky=Laplace())
     kx=gramian(bxx,kkx)
     ky=gramian(byy,kky)
 
