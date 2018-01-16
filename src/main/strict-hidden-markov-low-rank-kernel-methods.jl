@@ -1,5 +1,5 @@
 
-struct LRKKF_SHHM{Tx,Ty} <: LRKXF
+struct LRKKF_SHMM{Tx,Ty} <: LRKXF
     bxx::Vector{Tx}     # B_x basis
     xx0::Vector{Tx}     # subsample carrying Nystrom approximations 
     byy::Vector{Ty}     # B_y basis
@@ -16,6 +16,10 @@ struct LRKKF_SHHM{Tx,Ty} <: LRKXF
 end
 
 
+rand_ux(model::StrictHMM) = error("Must implement `rand_ux()` interface to use low-rank kernel methods.")
+
+
+
 """
     LRKF(model::StrictHMM,r,m)
 
@@ -23,7 +27,10 @@ Build approximate dynamics for `model`.
 Markov transition matrices are supported on `m` basis points and are of low rank `r`.
 Rely on user-provided `draw_x`, `draw_y` and `rand_ux`.
 """
-function LRKF(model::StrictHMM,r,m)
+LRKKF(model::StrictHMM,r,m) = LRKKF(model,r,r,m)
+
+
+function LRKKF(model::StrictHMM,rx,ry,m)
 
     xx1 = Vector{Vector{Float64}}(m)        # "left" sample on E_x (ie. x_t)     
     bxx = Vector{Vector{Float64}}(m)        # "right" sample on E_x (ie. x_t+1), will eventually be bxx. Sometimes called xx2.
@@ -35,8 +42,8 @@ function LRKF(model::StrictHMM,r,m)
         byy[i] = rand(model,Val(:y),xx1[i])
     end
 
-    xx0 = sample(xx1,r,replace=false)  #if necessary, may want to subsample from vcat(bxx,xx1)
-    yy0 = sample(byy,r,replace=false)
+    xx0 = sample(xx1,rx,replace=false)  #if necessary, may want to subsample from vcat(bxx,xx1)
+    yy0 = sample(byy,ry,replace=false)
 
     gx01 = gramian(xx0,xx1)
     wx00 = gx01*gx01'
@@ -50,14 +57,14 @@ function LRKF(model::StrictHMM,r,m)
 end
 
 
-function mutation!(pred,model::StrictHMM,mu,kf::KKF_SHHM)
+function mutation!(pred,model::StrictHMM,mu,kf::LRKKF_SHMM)
     unnormalized_predictive = kf.gx01'*(kf.wx00\(kf.gx20'*mu))
     probnorm!(pred,unnormalized_predictive)
 end
 
 
 
-function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
+function selection!(mu,model::StrictHMM, predictive::Vector{Float64}, y_tp1, kf::LRKKF_SHMM)
     # nu_y is the unnormalized marginal on E_y
     nu_y = kf.gx01'*(kf.wx00\(kf.gx20'*predictive))
     

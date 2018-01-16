@@ -32,7 +32,7 @@ function filtr(model::StrictHMM,ini_sample,data,pf::BootstrapParticleFilter)
         ## resampling step
         # normalize!(w,1) #I believe this may unnecessary as wsample can take unnormalized weights
         indx=wsample(1:n,w,n)
-        xx[:,:,t]=xxx[:,indx]
+        xx[:,:,t+1]=xxx[:,indx]
     end
     xx
 end

@@ -3,7 +3,7 @@
 # Illustrates:
 # - how to extend the package's abstract type `DiscreteHMM` in order to implement a concrete statistical model.
 # - the package's native methods: `filtr()`, `filter_smoother()`, `loglikelihood()`.
-# - how to compute the MLE using an external optimization package. You can either do plain maximization over `loglikelihood()`, 
+# - how to compute the MLE using an external optimization package. One can either do plain maximization over `loglikelihood()`, 
 #   or use the EM-algorithm with E-step via `eweights!()` and M-step via numerical optimization. 
 # - `likelihood()` is compatible with automatic differentiation   
 

@@ -39,7 +39,7 @@ include("utils/rkhs.jl")
 	include("main/strict-hidden-markov-particle-methods.jl")  
 
 	export HiddenMarkovModels, LinearGaussianHMM, DiscreteHMM    	    # model types
-	export KKF, PF														    # filtering techniques
+	export KKF, LRKKF, PF														    # filtering techniques
 	export filtr, loglikelihood, filter_smoother, eweights!             # methods
 	export viterbi
 

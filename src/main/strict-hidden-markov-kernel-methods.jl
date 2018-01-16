@@ -91,7 +91,7 @@ end
 ### Kernel Filtering, aka. Kernel-Kernel Filtering, aka. KKF
 ######################################################################################
 
-struct KKF_SHHM{Tx,Ty} <: KXF
+struct KKF_SHMM{Tx,Ty} <: KXF
     bxx::Vector{Tx}
     byy::Vector{Ty}
     kx::Matrix{Float64}
@@ -103,9 +103,9 @@ struct KKF_SHHM{Tx,Ty} <: KXF
     kky::Kernel
 end
 
-mutation!(pred,model::StrictHMM,mu,kf::KKF_SHHM) = upq!(pred,mu,kf.qxx)    
+mutation!(pred,model::StrictHMM,mu,kf::KKF_SHMM) = upq!(pred,mu,kf.qxx)    
 
-function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHHM)
+function selection!(mu,model::StrictHMM, predictive, y_tp1, kf::KKF_SHMM)
     # nx,ny=size(kf.qxy)
     kernel_bayes!(mu,predictive,kf.qxy,y_tp1,kf.byy,kf.ky,kf.kky,kf.tol)
 end
@@ -114,7 +114,7 @@ end
 function KKF(model::StrictHMM,bxx,byy,qxx::Matrix{Float64},qxy,tol_kbr=1.0,kkx=Laplace(),kky=Laplace()) 
     kx=gramian(bxx,kkx)
     ky=gramian(byy,kky)
-    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
+    KKF_SHMM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
 rand(model::HiddenMarkovModel,flag::Val{:x},x) = draw_x(model,x)
@@ -132,7 +132,7 @@ function KKF(model::StrictHMM,bxx,byy,m::Int,tol_kbr=1.0,kkx=Laplace(),kky=Lapla
     qxy=markovapprox(model, Val(:y), bxx, byy, ky, m, kky, tol_approx)
     println()
     
-    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
+    KKF_SHMM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
 function KKF(model::StrictHMM,bxx,byy,tol_kbr::Float64=1.0,kkx=Laplace(),kky=Laplace())
@@ -147,7 +147,7 @@ function KKF(model::StrictHMM,bxx,byy,tol_kbr::Float64=1.0,kkx=Laplace(),kky=Lap
     qxy=markovapprox(model, Val(:y), bxx, byy)
     println()
     
-    KKF_SHHM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
+    KKF_SHMM(bxx,byy,kx,ky,qxx,qxy,tol_kbr,kkx,kky)
 end
 
 

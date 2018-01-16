@@ -20,18 +20,18 @@ HMM=HiddenMarkovModels
 
 rho = 0.999
 
-struct TAR <: HMM.StrictHMM
+struct CensoredAR <: HMM.StrictHMM
 end
 
 censor(x) =  min(max(-1,x),1)
 
 # Implement the `HMM.StrictHMM` interface:
-HMM.draw_x(m::TAR,x) = [rho*x[1]+0.2*randn()]
-HMM.draw_y(m::TAR,x) = [censor(x[1]+0.2*rand())]
+HMM.draw_x(m::CensoredAR,x) = [rho*x[1]+0.2*randn()]
+HMM.draw_y(m::CensoredAR,x) = [censor(x[1]+0.2*rand())]
 
 
 # create model
-tar_model=TAR()
+car_model=CensoredAR()
 
 # Choose initial values and simulate. 
 x0  = 0.0
@@ -39,12 +39,12 @@ y0  = 0.0
 ini = ([x0],[y0])
 
 T     = 500
-xx,yy = rand(tar_model,ini,T)
+xx,yy = rand(car_model,ini,T)
 
 # Pick an approximate nonlinear filtering technique - here kernel filtering on a simple grid:
 bxx = [[x] for x=linspace(-15,15,100)]
 byy = [[y] for y=linspace(-15,15,100)]
-kf  = KKF(tar_model,bxx,byy,1000)
+kf  = KKF(car_model,bxx,byy,1000)
 
 # pass an initial value for the nonlinear filter p(x_1|y_1) in the form of a sample.
 # Here we initialize the nonlinear filter at p(x_1|y_1) = delta_{x_0} (a point mass).
@@ -53,7 +53,7 @@ ini = [ [x0] ]
 
 
 # run the nonlinear filter:
-nl_filter=filtr(tar_model,ini,yy,kf)
+nl_filter=filtr(car_model,ini,yy,kf)
 
 
 # We are done, now we just need to plot it.

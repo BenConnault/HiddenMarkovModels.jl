@@ -9,7 +9,7 @@ A Julia package for probability and statistics with hidden Markov models.
 Suppose an unobserved variable `x_t` evolves as a relatively persistent AR(1), and we observe `y_t = censor(x_t + noise)` where `censor(x)=-1.*(x<-1) + x*(-1<=x<1) + 1.*(1<=x)`. We can track our best guess of where `x_t` is as `y_t` evolves through time by using the `filtr()` method of the package (plotted below for one particular time-series realization). When `y_t` stays out of the [-1,1] observation window for a long period of time, uncertainty about to the position of `x_t` increases quickly, as witnessed by the width of the 95\% probability interval. When `y_t` finally falls back inside the [-1,1] observation window, our best guess gets much better, similar to what a Kalman filter would tell us for a non-censored version of this AR(1) + noise. 
 
 
-![nonlinear filtering for a censored AR(1)](examples/tar-filtering.png)
+![nonlinear filtering for a censored AR(1)](examples/censored-ar-filtering.png)
 
 One-step-ahead simulation code, ie. code that draws random `(x_{t+1},y_{t+1})` values for given `(x_t,y_t)` values, was the only example-specific code needed to compute the nonlinear filters and smoothers plotted here. See below for actual code.
 
