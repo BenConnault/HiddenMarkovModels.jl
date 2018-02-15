@@ -33,7 +33,7 @@ The tentative scope of the package includes:
 - any type of hidden Markov models: discrete / continuous, linear / nonlinear, with / without feedback. 
 
 The following items are out-of-scope:
-- parameter estimation, ie. likelihood _maximization_. The package does provide all the tools needed for MLE using an external optimization package (including loglikelihood evaluations compatible with automatic differentiation), but in order to keep the package focused and a lean REQUIRE file, we leave this responsibility to the user. 
+- parameter estimation, ie. likelihood _maximization_. The package does provide loglikelihood evaluations (compatible with automatic differentiation), but in order to keep the package focused and a lean REQUIRE file, we leave optimization to the user. 
 - so-called nonhomogeneous models, aka. models with time-dependent parameters.
 - control variables.
 
@@ -58,22 +58,23 @@ censor(x) =  min(max(-1,x),1)
 
 ~~~   
 
-Then implement a concrete type for your model. All we need is to tell Julia how to draw random `(x_{t+1},y_{t+1})` values given some `(x_t,y_t)` values. Here `x_t` evolves as an AR(1) with N(0,0.2) innovations and `y_t` is a censored version of `x_t + N(0,0.2)`:
+Then implement a concrete type for your model. All we need is to tell Julia how to draw random `(x_{t+1},y_{t+1})` values given some `(x_t,y_t)` values. Here `x_t` evolves as an AR(1) with `N(0,0.2)` innovations and `y_t` is a censored version of `x_t + N(0,0.2)`:
 
 ~~~julia
-struct TAR <: HMM.StrictHMM end
-HMM.draw_x(m::TAR,x) = [rho*x[1]+0.2*randn()]
-HMM.draw_y(m::TAR,x) = [censor(x[1]+0.2*rand())]
+struct CensoredAR <: HMM.StrictHMM end
+HMM.draw_x(m::CensoredAR,x) = [rho*x[1]+0.2*randn()]
+HMM.draw_y(m::CensoredAR,x) = [censor(x[1]+0.2*rand())]
 ~~~
 
 Draw a time-series of unobserved and observed variables:
 
 ~~~julia
+car_model = CensoredAR()
 x0  = 0.0
 y0  = 0.0
 ini = ([x0],[y0])
 T     = 500
-xx,yy = rand(tar_model,ini,T)
+xx,yy = rand(car_model,ini,T)
 ~~~
 
 
@@ -84,7 +85,7 @@ bxx = [[x] for x=linspace(-10,10,100)]
 byy = [[y] for y=linspace(-10,10,100)]
 kf  = KKF(tar_model,bxx,byy)
 ini = [ [x0] ]
-nl_filter=filtr(tar_model,ini,yy,kf)
+nl_filter=filtr(car_model,ini,yy,kf)
 ~~~
 
 Under the hood, Julia:

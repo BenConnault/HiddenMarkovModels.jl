@@ -32,6 +32,8 @@ using Distributions.wsample
 
 
 struct SimpleModel{F} <: HMM.DiscreteHMM
+    nx::Int
+    ny::Int
     theta::Vector{F}
     qxx::Matrix{F}
     qxy::Matrix{F}
@@ -53,7 +55,7 @@ function coef!(model::SimpleModel,theta)
 end
 
 function simple_model(theta)
-    model = SimpleModel(theta,zeros(eltype(theta),dx,dx),zeros(eltype(theta),dx,dy))
+    model = SimpleModel(dx,dy,theta,zeros(eltype(theta),dx,dx),zeros(eltype(theta),dx,dy))
     coef!(model,theta)
     model
 end
